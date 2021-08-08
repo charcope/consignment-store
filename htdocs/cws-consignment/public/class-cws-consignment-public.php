@@ -139,53 +139,67 @@ class cws_consignment_Public {
 	 */
 	public function init_shortcodes() {
 		add_shortcode( 'additemform', array($this, 'additemform_func') );
-		add_action( 'wp_ajax_cwscs_get_cat_prices', array( $this, 'cwscs_get_cat_prices' ), 20 );
-		add_action( 'wp_ajax_nopriv_cwscs_get_cat_prices', array( $this, 'cwscs_get_cat_prices' ), 20 );
+		add_action( 'wp_ajax_cwscs_ajax_add_item', array( $this, 'cwscs_ajax_add_item' ), 20 );
+		add_action( 'wp_ajax_nopriv_cwscs_ajax_add_item', array( $this, 'cwscs_ajax_add_item' ), 20 );
 	}
 	 
 	/**
 	 * Handles my AJAX request.
 	 */
-	public function cwscs_get_cat_prices() {
+	public function cwscs_ajax_add_item() {
 		// check referrer
 		//check_ajax_referer( 'cwscs_doajax' );
 		// get post vars
-		$action = $_POST['action']; //get_cat_prices
-		$thiscat = $_POST['thiscat']; // may be blank
-		$thistask = $_POST['thistask']; // so far only getcatprices
-		$status = 1;
-		$ct = "";
-		// get store categories
-		$cats = cwscsGetCategories();
-		if (is_array($cats) || is_object($cats)) {
-			$found = false;
-			if (isset($thiscat) && $thiscat > 0) {
-				$select_cats = array();
-				foreach ($cats as $i => $cat) {
-					if ($cat->term_id == $thiscat) {
-						$select_cats[] = $cat;
+		// SWITCH ON ACTION, get cat prices if get_cat_prices
+		if (!isset($_POST['thistask'])) {
+			$thistask = "None";
+			$msg = "No task passed";
+			$status = 0;
+		} else
+			$thistask = $_POST['thistask']; //what shall we do
+		if ($thistask == "getcatprices") {
+			$thiscat = $_POST['thiscat']; // may be blank
+			$thistask = $_POST['thistask']; // so far only getcatprices
+			$status = 1;
+			$ct = "";
+			// get store categories
+			$cats = cwscsGetCategories();
+			if (is_array($cats) || is_object($cats)) {
+				$found = false;
+				if (isset($thiscat) && $thiscat > 0) {
+					$select_cats = array();
+					foreach ($cats as $i => $cat) {
+						if ($cat->term_id == $thiscat) {
+							$select_cats[] = $cat;
+							$found = true;
+						}
+					}
+				}
+				if (!$found)
+					$select_cats = $cats;
+				$results = cwscsGetPricesByCategory($select_cats);
+			}
+			if (!isset($results[0]['total_items'])) {
+				$status = 0;
+			}
+			if ($status == 1) {
+				// any items?
+				$found = false;
+				foreach($results as $i => $arr) {
+					if ($arr['total_items'] > 0) {
 						$found = true;
 					}
 				}
+				if (!$found)
+					$status = -1;
 			}
-			if (!$found)
-				$select_cats = $cats;
-			$results = cwscsGetPricesByCategory($select_cats);
-		}
-		if (!isset($results[0]['total_items'])) {
-			$ct .= 'No items in store yet.';
+		} // END get_cat_prices
+		elseif ($thistask == "uploadimage") {
+			$status = 1;
+			$results = cwscs_uploadImg();
+		} else {
 			$status = 0;
-		}
-		if ($status == 1) {
-			// any items?
-			$found = false;
-			foreach($results as $i => $arr) {
-				if ($arr['total_items'] > 0) {
-					$found = true;
-				}
-			}
-			if (!$found)
-				$status = -1;
+			$results = "No action";
 		}
 		$results = array("status"=>$status, "data"=>$results);
 		wp_send_json($results);
@@ -281,7 +295,7 @@ class cws_consignment_Public {
 				$msg .= '<p class="failmsg">There was an error saving the item. Please try again. </p>';
 			} else {
 				if (!$admin) {
-					$msg .= '<p class="successmsg">Your item has been submitted. Once your item has been reviewed, we will be in touch! You can scroll down to add another item. Please don&rsquo;t refresh! That will resubmit your item. ';
+					$msg .= '<p class="successmsg">Your item has been submitted. Once your item has been reviewed, we will be in touch! You can scroll down to add another item. <br />Please don&rsquo;t refresh! That will resubmit your item. ';
 				} else {
 					$msg .= '<p class="successmsg">The item has been saved to the store. You can scroll down to add another item. Please don&rsquo;t refresh! That will resubmit your item. ';
 				}
@@ -502,6 +516,7 @@ class cws_consignment_Public {
 					}*/
 				}
 				$ct .= '
+				<p id="cwscs_errormsg" class="failmsg hidden"></p>
 				<button type="submit" name="additem" class="single_add_to_cart_button button">Add Item</button>'; 
 			$ct .= '	
 			</form>		
@@ -556,32 +571,38 @@ function cwscsGetPricesByCategory($cats) {
 	$ctr_r = 0;
 	foreach ($cats as $i => $cat) {
 		if (isset($cat->term_id) && $cat->term_id > 0) {
-			$results[$ctr_r]['term_id'] = $cat->term_id;
-			$results[$ctr_r]['name'] = $cat->name;
 			// get all post_ids for the products in this cat from term_relationships 
 			$allprods = $wpdb->get_results( 'SELECT object_id FROM '.$prefix.'term_relationships WHERE term_taxonomy_id="'.$cat->term_id.'"' ); 
 			if ((is_array($allprods) || is_object($allprods)) && count($allprods) > 0) {
 				$str = "(";
 				$conn = '';
 				$total = count($allprods);
-				$results[$ctr_r]['total_items'] = $total;
+				
 				foreach ($allprods as $j => $prod) {
 					$str .= $conn.$prod->object_id;
 					$conn = ',';
 				}
 				$str .= ')';
-				// get lowest price
-				$values = $wpdb->get_results( 'SELECT meta_value FROM '.$prefix.'postmeta WHERE post_id IN '.$str.' AND meta_key ="_price" ORDER BY meta_value ASC' );
-				if (is_array($values) || is_object($values)) {
-					$results[$ctr_r]['lowest'] = $values[0]->meta_value;
-					$len = count($values) - 1;
-					$results[$ctr_r]['highest'] = $values[$len]->meta_value;
+				// get lowest price -- metavalue is character so must convert to numeric and then sort
+				$values = $wpdb->get_results( 'SELECT meta_value FROM '.$prefix.'posts as a, '.$prefix.'postmeta as b WHERE a.ID=b.post_id AND a.post_type="product" AND a.post_status="publish" AND b.post_id IN '.$str.' AND b.meta_key ="_price" AND b.meta_value IS NOT NULL AND b.meta_value!="" ORDER BY b.meta_value ASC' );
+				if ((is_array($values) || is_object($values)) && count($values) > 0) {
+					$results[$ctr_r]['term_id'] = $cat->term_id;
+					$results[$ctr_r]['name'] = $cat->name;
+					$nums = array();
+					$total = count($values);
 					$amt = 0;
-					foreach ($values as $j => $val) {
+					foreach ($values as $i => $val) {
+						$nums[] = $val->meta_value * 1;
 						$amt += $val->meta_value * 1;
 					}
+					sort($nums);
+					$results[$ctr_r]['lowest'] = number_format($nums[0],2);
+					$len = count($nums) - 1;
+					$results[$ctr_r]['highest'] = number_format($nums[$len],2);
+					$results[$ctr_r]['total_items'] = $total;
+
 					if ($amt > 0 && $total > 0)
-						$results[$ctr_r]['average'] = $amt/$total;
+						$results[$ctr_r]['average'] = number_format($amt/$total,2);
 					else
 						$results[$ctr_r]['average'] = 0;
 				} // END got prices
@@ -592,8 +613,8 @@ function cwscsGetPricesByCategory($cats) {
 				$results[$ctr_r]['highest'] = 0; 
 				$results[$ctr_r]['average'] = 0; 
 			}
+			$ctr_r++;
 		} // END there is a cat id
-		$ctr_r++;
 	} // END loop on cats
 	return $results;
 }
@@ -885,4 +906,57 @@ function cwscsShowItemSummary() {
 function cwscsGetAllSplits() {
 	$splits = array(50=>'50 / 50 (default)', 100=>"100 if donated");
 	return $splits;
+}
+// handle the image upload from the ajax function
+function cwscs_uploadImg() {
+	$upload_dir_paths = wp_upload_dir();
+	$baseurl = $upload_dir_paths['baseurl'];
+	$basedir = $upload_dir_paths['basedir'];
+	$file_name = "image_data";
+	$msg = "";
+	$status = 1;
+	$allowed = array("image/gif", "image/jpeg", "image/png", "image/x-png", "image/pjpeg");
+	$img = "";
+	if (isset($_POST['tmpfilename']) && $_POST['tmpfilename'] != "")
+		$tmpfilename = $_POST['tmpfilename'];
+	else
+		$tmpfilename = 'newimg-'.date("Ymdhis").'.jpg';
+	if ($_FILES[$file_name]['error'] === UPLOAD_ERR_OK) {
+		if ($_FILES[$file_name]['name'] != "") {	
+			$type = $_FILES[$file_name]['type'];
+			if (!in_array($type, $allowed)) {
+				$msg .= '<p class="failmsg">Cannot load image #'.$i.", name: ".$_FILES[$file_name]['name']." since it is a ".$type.'. We can only accept image files. </p>';
+				$status = 0;
+			} elseif ($_FILES[$file_name]['size'] > 10000000) {
+				$msg .= '<p class="failmsg">Image #'.$i.' is too big! Can accept images that are bigger than 10Mb. This one is '.$_FILES[$file_name]['size'].' bytes. </p>';
+				$status = 0;
+			} else {
+				// Can we upload it?
+				$msg .= '<p class="successmsg">Image can be uploaded now. It is '.$_FILES[$file_name]['size'].'bytes. </p>';
+				$tmpfilename = str_replace("%20","_",$tmpfilename);
+				$partimgurl = $_POST['baseurl'].'/'.date("Y").'/'.date("m").'/'.$tmpfilename;
+				$fullimgurl = $_POST['basedir'].'/'.date("Y").'/'.date("m").'/'.$tmpfilename;
+				// move the image and return the image name
+				if (move_uploaded_file($_FILES[$file_name]['tmp_name'], $fullimgurl)) {
+					$msg .= 'Uploaded to '.$fullimgurl;
+				} // END no errors in upload
+				else {
+					$status = 0;
+					$msg .= "Not uploaded because of error #".$_FILES[$file_name]["error"];
+					$img = "";
+				}
+			} // END upload
+		} // END name is not blank
+	} // no error
+	else {
+		$msg = 'Could not upload '.$_POST['tmpfilename'].', baseurl: '.$baseurl.', basedir: '.$basedir;
+		foreach ($_FILES as $n => $v)
+			$msg .= "$n: $v, ";
+	}
+	$results = array("status"=>$status, "message"=>$msg);
+	if ($status == 1) {
+		$results['fullimgurl'] = $fullimgurl;
+		$results['partimgurl'] = $partimgurl;
+	}
+	return $results;	
 }

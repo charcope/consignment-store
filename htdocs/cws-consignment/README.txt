@@ -62,6 +62,10 @@ If you are logged in to your site, go to the page where you have included the [a
 
 SKU's do need to be unique. Since this is for a consignment shop it is assumed each item is unique and requires its own sku. 
 
+= I get a 403 when I try to select an image on the Add Item form. =
+
+I have seen this on Microsoft Edge when there is a security plugin such as WordFence activated. You need to allow basedir to be posted. In WordFence, go to All Options and scroll down to Allolisted URLs. Add a new URL that is the page where your form is (/addanitem/ for example). Select Param Type POST Body, and enter basedir in the Param Name. Click ADD. Add another rule now for the ajax file by entering URL /wp-content/plugins/cws-consignment/public/class-cws-consignment-public.php. And again select Param Type POST Body, and enter basedir in the Param Name. Click ADD. And Save Changes.
+
 
 == Screenshots ==
 

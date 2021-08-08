@@ -11,24 +11,29 @@
 					$('#catprices').html('<p class="warnmsg">Fetching prices... please wait</p>');
 					var this2 = this;                      //use in callback
 					$.post(my_ajax_obj.ajax_url, {         //POST request
-						action: "cwscs_get_cat_prices",
+						action: "cwscs_ajax_add_item",
 						thiscat: $('#item_cat').val(), 		// data
 						thistask: "getcatprices"
 					}, function(results) {                    //callback
+						console.log(JSON.stringify(results), results.status);
 						if (!results) {
 							$('#catprices').html("Could not fetch at this time.");
+							console.log('Could not fetch');
 						} else if (results.status) {
+							console.log('In here and ' + results.status);
 							if (results.status == -1) { // no results
 								$('#catprices').html('<p class="failmsg">Sorry! There are no prices available to show at this time.</p>');
+								console.log("NO RESULTS");
 							} else if (results.status == 0) { // error
 								$('#catprices').html('<p class="failmsg">Sorry! There are no prices available to show at this time.</p>');
+								console.log("status is 0");
 							} else {
 								console.log('TEST: good results');
 								var ct = showCatPrices(results.data);
 								$('#catprices').html(ct);
 							}
 						}
-						console.log(JSON.stringify(results));
+						
 						/*
 						this2.nextSibling.remove();        //remove current title
 						$(this2).after(data);              //insert server response
@@ -66,11 +71,11 @@
 function showCatPrices(data) {
 	var ct = '<div class="div_showcatprices"><p>' + data.length + ' results.</p>';
 	if (data) {
-		ct += '<table class="table borders" width="100%"> <tbody> <tr><th>Category</th><th># Items in Store</th><th>Lowest Price</th><th>Highest Price</th> <th>Average</th></tr>';
+		ct += '<table class="table borders" width="100%"> <tbody> <tr><th>Category</th><th class="text-center"># Items in Store</th><th class="text-right">Lowest Price</th><th class="text-right">Highest Price</th> <th class="text-right">Average</th></tr>';
 		// loop through
 		for (var i=0; i<data.length; i++) {
 			if (data[i]['total_items'] > 0) {
-				ct += '<tr><td>' + data[i]['name'] + '</td><td>' + data[i]['total_items'] + '</td> <td>$' + data[i]['lowest'] + '</td> <td>$' + data[i]['highest'] + '</td> <td>$' + data[i]['average'] + '</td> </tr>';
+				ct += '<tr><td>' + data[i]['name'] + '</td><td class="text-center">' + data[i]['total_items'] + '</td> <td class="text-right">$' + data[i]['lowest'] + '</td> <td class="text-right">$' + data[i]['highest'] + '</td> <td class="text-right">$' + data[i]['average'] + '</td> </tr>';
 			}
 		}
 		ct += '</tbody></table>';
@@ -154,51 +159,85 @@ var dataURLToBlob = function(dataURL) {
 /* End Utility function to convert a canvas to a BLOB      */
 /* Handle image resized events */
 jQuery(document).on("imageResized", function (event) {
-	var data = new FormData(jQuery("form[id*='uploadImageForm']")[0]);
-	console.log('here and id ' + event.thisid); 
+	console.log('here and event ', event.blob); 
     if (event.blob && event.url && event.thisid) {
-		console.log('TEST: in here');
-        data.append('image_data', event.blob);
-		data.append('tmpfilename', jQuery('#tmpfilename').val());
-		data.append('baseurl', jQuery('#baseurl').val());
-		data.append('basedir', jQuery('#basedir').val());
-		console.log ("all done and resized at " + event.blob.size + ', type is ' + event.blob.type);
-		var objectURL = (URL || webkitURL).createObjectURL(event.blob);	
-        jQuery.ajax({
-            url: "/ajax/upload.php",
-            data: data,
-            cache: false,
+		console.log ("TEST: resized at " + event.blob.size + ', type is ' + event.blob.type + ', tmpfilename: ' + jQuery('#tmpfilename').val());
+		//var objectURL = (URL || webkitURL).createObjectURL(event.blob);	
+		var this2 = this;                      //use in callback
+		var formdata = false;
+		if (window.FormData) {
+			formdata = new FormData();
+			var form = jQuery('#cwscs_formadditem')[0];
+      		formdata = new FormData(form);
+			console.log("Formdata initialized");
+		} else {
+			console.log("FormData not supported")
+		}
+		console.log('Formdata is now ' + typeof formdata, formdata);
+        formdata.append("action", "cwscs_ajax_add_item");
+		formdata.append("thistask", "uploadimage");
+		formdata.append('image_data', event.blob);
+		formdata.append('tmpfilename', jQuery('#tmpfilename').val());
+		jQuery.ajax({
+			url:my_ajax_obj.ajax_url,
+			type:"POST",
             contentType: false,
             processData: false,
+            cache: false,
+			crossDomain: true,
 			dataType: 'json',
-            type: 'POST',
-			error: function(data){
-               console.log("error: ", data);
-			   // maybe populate a form field with the file name?
-            },
-			fail: function(data){
-               console.log("fail: ", data);
-			   // maybe populate a form field with the file name?
-            },
+    		data: formdata,
+			fail: function(results){
+				console.log('FAIL: ', results)
+				jQuery('#cwscs_errormsg').html("Image upload failed");
+				jQuery('#cwscs_errormsg').removeClass("hidden");
+				jQuery('#cwscs_errormsg').addClass("failmsg");
+				jQuery('#cwscs_errormsg').removeClass("successmsg");
+			},
+			error: function(results){
+				console.log('ERROR: ', results)
+				jQuery('#cwscs_errormsg').html("Image upload failed");
+				jQuery('#cwscs_errormsg').removeClass("hidden");
+				jQuery('#cwscs_errormsg').addClass("failmsg");
+				jQuery('#cwscs_errormsg').removeClass("successmsg");
+			},
 			success: function(results){
-				console.log("Success: ", results);
-				if (results && results.status) {
-					console.log('TEST: have results and ' + typeof results)
-					jQuery('#msg').html(results.status);
-					if (results.partimgurl) {
-						console.log('populating filename');
-						var thisid = event.thisid;
-						var el = thisid.replace("image", "filename");
-						jQuery('#' + el).val(results.partimgurl);
-						console.log('# + ' + el + ' set to ' + results.partimgurl);
-						// show on form
-						var el = thisid.replace("image", "tmp-img");
-						jQuery('#' + el).attr("src", results.partimgurl);
-						console.log('# + ' + el + ' set to ' + results.partimgurl);
-						jQuery('#' + el).removeClass("hidden");
+				console.log('SUCCESS: ', results)
+				jQuery('#cwscs_errormsg').html("");
+				jQuery('#cwscs_errormsg').addClass("hidden");
+				jQuery('#cwscs_errormsg').addClass("failmsg");
+				jQuery('#cwscs_errormsg').removeClass("successmsg");
+				if (!results) {
+					jQuery('#cwscs_errormsg').html("Could not upload the image at this time.");
+					jQuery('#cwscs_errormsg').removeClass("hidden");
+					console.log('TEST: no results');
+				} else if (results.status) {
+					console.log('In here and ' + results.status);
+					if (results.status == 0) { // error
+						jQuery('#cwscs_errormsg').html("There was an error.");
+						jQuery('#cwscs_errormsg').removeClass("hidden");
+						console.log("status is 0");
+					} else {
+						console.log('TEST: good results, ' + typeof results.data.partimgurl);
+						if (results.data && results.data.partimgurl) {
+							console.log('populating filename');
+							var thisid = event.thisid;
+							var el = thisid.replace("image", "filename");
+							jQuery('#' + el).val(results.data.partimgurl);
+							console.log('# + ' + el + ' set to ' + results.data.partimgurl);
+							// show on form
+							var el = thisid.replace("image", "tmp-img");
+							jQuery('#' + el).attr("src", results.data.partimgurl);
+							console.log('# + ' + el + ' set to ' + results.data.partimgurl);
+							jQuery('#' + el).removeClass("hidden");
+						} else {
+							console.log('No partimgurl');
+							jQuery('#cwscs_errormsg').html("Could not upload the image.");
+							jQuery('#cwscs_errormsg').removeClass("hidden");
+						}
 					}
-				}
-            }
-        });
+				} // END check on status
+			} // END success
+		});
     }
 });

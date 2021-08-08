@@ -344,10 +344,7 @@ class cws_consignment_Public {
 		<div class="additemform">';
 		// SHOW regular additem form
 		$ct .= '<br />
-		<form action="'.$current_url.'" method="post" enctype="multipart/form-data" class="cwscs_form" id="cwscs_formadditem" >
-			<input type="hidden" name="MAX_FILE_SIZE" value="3000000" />
-			<input type="hidden" id="baseurl" name="baseurl" value="'.$upload_dir_paths['baseurl'].'" />
-			<input type="hidden" id="basedir" name="basedir" value="'.$upload_dir_paths['basedir'].'" />';
+		<form action="'.$current_url.'" method="post" enctype="multipart/form-data" class="cwscs_form" id="cwscs_formadditem" >';
 				if ($admin) {
 					// enter sku if staff
 					$ct .= '

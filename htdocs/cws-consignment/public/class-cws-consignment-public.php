@@ -222,6 +222,8 @@ class cws_consignment_Public {
 		$msg = "";
 		$warn = "";
 		$upload_dir_paths = wp_upload_dir();
+		$baseurl = $upload_dir_paths['baseurl'];
+		$basedir = $upload_dir_paths['basedir'];
 		$name = "";
 		$email = "";
 		// get some info if they are logged in
@@ -260,8 +262,8 @@ class cws_consignment_Public {
 				$imagename = "filename".$i;
 				if ($_POST[$imagename] != "") {
 					$file_type = wp_check_filetype( $_POST[$imagename], null );
-					$attachment_title  = str_replace($_POST['baseurl'].'/'.date("Y/m").'/', "", $_POST[$imagename]); // just the file name
-					$file_path = str_replace($upload_dir_paths['baseurl'], $upload_dir_paths['basedir'], $_POST[$imagename]);
+					$attachment_title  = str_replace($baseurl.'/'.date("Y/m").'/', "", $_POST[$imagename]); // just the file name
+					$file_path = str_replace($baseurl, $basedir, $_POST[$imagename]);
 					// The ID of the post this attachment is for.
 					$parent_post_id = 0;
 					$post_info = array(
@@ -288,7 +290,11 @@ class cws_consignment_Public {
 			} // END loop on 4 images
 
 			if ($msg == "") {
-				$insert_id = cwscsAddItem($_POST, $attachments);
+				if (isset($_POST['item_cat']) && $_POST['item_cat'] > 0)
+					$insert_id = cwscsAddItem($_POST, $attachments);
+				else {
+					$msg .= '<p class="failmsg">Please select an item category. </p>';
+				}
 			} else
 				$insert_id = -1;		
 			if ($insert_id < 0) { // fail so show msg and show form
@@ -929,17 +935,19 @@ function cwscs_uploadImg() {
 				$status = 0;
 			} else {
 				// Can we upload it?
-				$msg .= '<p class="successmsg">Image can be uploaded now. It is '.$_FILES[$file_name]['size'].'bytes. </p>';
+				
 				$tmpfilename = str_replace("%20","_",$tmpfilename);
-				$partimgurl = $_POST['baseurl'].'/'.date("Y").'/'.date("m").'/'.$tmpfilename;
-				$fullimgurl = $_POST['basedir'].'/'.date("Y").'/'.date("m").'/'.$tmpfilename;
+				$partimgurl = $baseurl.'/'.date("Y").'/'.date("m").'/'.$tmpfilename;
+				$fullimgurl = $basedir.'/'.date("Y").'/'.date("m").'/'.$tmpfilename;
 				// move the image and return the image name
 				if (move_uploaded_file($_FILES[$file_name]['tmp_name'], $fullimgurl)) {
-					$msg .= 'Uploaded to '.$fullimgurl;
+					$msg .= 'Image has been uploaded to '.$fullimgurl.' It is '.$_FILES[$file_name]['size'].'bytes. ';
 				} // END no errors in upload
 				else {
 					$status = 0;
-					$msg .= "Not uploaded because of error #".$_FILES[$file_name]["error"];
+					$msg .= 'Could not upload to '.$fullimgurl.'. Contents of $_FILES is: ';
+					foreach ($_FILES[$file_name] as $n => $v)
+						$msg .= "$n: $v, ";
 					$img = "";
 				}
 			} // END upload

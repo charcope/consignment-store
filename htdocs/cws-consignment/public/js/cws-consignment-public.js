@@ -69,7 +69,7 @@
 })( jQuery );
 
 function showCatPrices(data) {
-	var ct = '<div class="div_showcatprices"><p>' + data.length + ' results.</p>';
+	var ct = '<div class="div_showcatprices"><p>' + data.length + ' result(s).</p>';
 	if (data) {
 		ct += '<table class="table borders" width="100%"> <tbody> <tr><th>Category</th><th class="text-center"># Items in Store</th><th class="text-right">Lowest Price</th><th class="text-right">Highest Price</th> <th class="text-right">Average</th></tr>';
 		// loop through

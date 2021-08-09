@@ -661,7 +661,7 @@ function cwscsApproveItem() {
 		} // END bad result from update inventory
 		if ($msg == "") {
 			$action = "insert";
-			// INSERT - added to pending inventory successfully. Now add to woocommerce
+			// INSERT - updated inventory successfully. Now add to woocommerce
 			$post_id = cwscsAddItemToWCadmin($_POST, "publish"); // try in includes
 			if (!$post_id) {
 				$tmp = 'Could not save item to store:  '.sanitize_text_field($_POST['item_title']).' from '.sanitize_text_field($_POST['seller_name']).',, '.sanitize_email($_POST['email']).'. Error is '.$wpdb->last_error.'. ';
@@ -1035,7 +1035,9 @@ function cwscsAddItemToWCadmin($post, $status) {
 		if (isset($item->item_colour) && $item->item_colour != "")
 			$desc .= "\r\n".$item->item_colour;	
 		if (isset($item->item_state) && $item->item_state != "")
-			$desc .= "\r\nState of item: ".$item->item_state;		
+			$desc .= "\r\nState of item: ".$item->item_state;	
+		if (isset($item->item_cat) && $item->item_cat > 0)
+			$desc .= "\r\nCategory: ".$item->item_cat;			
 		$options = array(
 			'post_title' => $item->item_title,
 			"post_type" => "product", 
@@ -1073,6 +1075,11 @@ function cwscsAddItemToWCadmin($post, $status) {
 		update_post_meta( $post_id, '_backorders', 'no' );
 		//update_post_meta( $post_id, '_yoast_wpseo_meta-robots-noindex', '2' ); // shop and search results
 		// update_post_meta( $post_id, '_stock', $post['qty'] );
+		// add category to product
+		$product = wc_get_product($post_id);
+		$product->set_category_ids(array($item->item_cat));
+		$product->save();
+		
 		// add the feature image
 		$attachments = array();
 		if (isset($post['item_image1']) && $post['item_image1'] > 0)
@@ -1105,10 +1112,7 @@ function cwscsAddItemToWCadmin($post, $status) {
 					// logerror
 			}
 		} // more than 1 image to add
-		// add category to product
-		if (isset($post['item_cat']) && $post['item_cat'] > 0) {
-			wp_set_post_terms( $post_id, array($post['item_cat']), 'product_cat', true );
-		}
+		
 	}
 	return $post_id;
 }

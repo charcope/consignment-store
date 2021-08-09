@@ -247,6 +247,7 @@ class cws_consignment_Admin {
 							// show item details, all images and the approve/reject form
 							foreach ($results as $i => $row) {
 								if ($row->ID == $_POST['item_id']) {
+									echo 'Showing details for '.$_POST['item_id'].'<br />';
 									echo showApproveRejectForm($current_url, $menu_slug, $row);
 									$found = true;
 								}

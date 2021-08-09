@@ -31,6 +31,7 @@ function cwscsShowSubmittedPage($current_url, $menu_slug, $results) {
 					<form action="'.$current_url.'?page='.$menu_slug.'" method="post">
 						<input type="hidden" value="'.$row->ID.'" name="item_id">
 						<button type="submit" class="single_add_to_cart_button button">Approve / Reject</button>
+					</form>	
 				</td>
 			</tr>';
 		}

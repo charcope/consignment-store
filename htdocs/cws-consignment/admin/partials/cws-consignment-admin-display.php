@@ -16,16 +16,16 @@
 ///////////////////////////////////////
 function cwscsShowSubmittedPage($current_url, $menu_slug, $results) {
 	$ctr = 0;	
-	$ct = '<div class="cwscs_admin">';	
+	echo '<div class="cwscs_admin">';	
 	if (is_array($results) || is_object($results)) {
-		$ct .= '<hr /><p>This table shows the '.count($results).' items that have been submitted and are not yet approved. </p><table class="cwscs_admin_table">
+		echo '<hr /><p>This table shows the '.count($results).' items that have been submitted and are not yet approved. </p><table class="cwscs_admin_table">
 		<thead><tr><th width="15%">Date Added</th><th width="20%">Seller</th><th width="50%">Item</th><th align="center" width="15%">See Item</th></tr></thead><tbody>';
 		foreach ($results as $i => $row) {
 			$ctr++;
-			$ct .= '
+			echo '
 			<tr>
 				<td>'.$ctr.'. '.$row->date_added.'</td>
-				<td>'.$row->seller_name.', '.$row->email.', '.$row->phone.'<br />Split: '.$row->store_split.'</td>
+				<td>'.$row->seller_name.', '.$row->email.', '.$row->phone.'<br />Split: '.esc_html($row->store_split).'</td>
 				<td>'.cwscsShowItemDeets($row, false, true).'</td>
 				<td align="center">
 					<form action="'.$current_url.'?page='.$menu_slug.'" method="post">
@@ -35,17 +35,16 @@ function cwscsShowSubmittedPage($current_url, $menu_slug, $results) {
 				</td>
 			</tr>';
 		}
-		$ct .= '</tbody><tfoot><th colspan=4>Total Items to Review: '.$ctr.'</th></tr></tfoot></table>';
+		echo '</tbody><tfoot><th colspan=4>Total Items to Review: '.$ctr.'</th></tr></tfoot></table>';
 	}
-	return $ct;
 }
 
 // They selected an item to approve or reject
 function showApproveRejectForm($current_url, $menu_slug, $row) {
 	$splits = cwscsGetAllSplits();
-	$ct = cwscsShowItemDeets($row, true, true); // show deets and all images
+	echo cwscsShowItemDeets($row, true, true); // show deets and all images
 	$_POST['item_id'] = intval($_POST['item_id']);
-	$ct .=
+	echo
 	'<form action="'.$current_url.'?page='.$menu_slug.'" method="post" class="cwsreview_item">
 		<input type="hidden" name="item_id" value="'.$_POST['item_id'].'" />
 		<input type="hidden" name="item_image1" value="'.sanitize_text_field($row->item_image1).'" />
@@ -55,49 +54,49 @@ function showApproveRejectForm($current_url, $menu_slug, $row) {
 		<h3>Your Review</h3>';
 		// show store split
 		
-		$ct .= '
+		echo '
 		<p id="p-store_split" class="cwshidden hideifrejected">
 			<label for "store_split">Review Store Split</label>
 			<select id="store_split" name="store_split">';
 			foreach ($splits as $i => $s) {
-				$ct .= '<option value='.$i;
+				echo '<option value='.$i;
 				if ($row->store_split == $i)
-					$ct .= ' selected="selected" ';
-				$ct .= '>'.$s.'</option>';
+					echo ' selected="selected" ';
+				echo '>'.$s.'</option>';
 			}
-			$ct .= '
+			echo '
 			</select>
 		</p>
 		<p id="p-sku" class="cwshidden hideifrejected">
 			<label for "sku">Enter SKU</label>
 			<input type="text" id="sku" name="sku" maxlength=8 value="';
 			if ($row->sku > 0)
-				$ct .= $row->sku;
-			$ct .= '" /> 
+				echo $row->sku;
+			echo '" /> 
 		</p>
 	
 		<p id="p-approved">';
 			$approved = array(1=>"Approve", 2=>"Reject");
 			foreach ($approved as $i =>$s) {
-				$ct .= '
+				echo '
 				<label class="radio" for="approved_'.$i.'">
 					<input type="radio" name="approved" required id="approved_'.$i.'" class="cwscheckapproved" value="'.$i.'" ';
 					if ($i == $row->approved)
-						$ct .= ' checked="checked" ';
-					$ct .= '/> '.$s.'
+						echo ' checked="checked" ';
+					echo '/> '.$s.'
 				</label>&nbsp;&nbsp;';
 			} // END loop on approved options
-		$ct .= '
+		echo '
 		</p>';
 		if ($row->approved == 1)
 			$cwshidden = "";
 		else
 			$cwshidden = "cwshidden ";
-		$ct .= '
+		echo '
 		<div id="approved-email" class="'.$cwshidden.'email-msg">
 			<p id="p-approved_sendemail">
 				<label for "approved_sendemail">Send An Email Upon Approval?</label>';
-				$ct .= '
+				echo '
 				<label class="radio" for="approved_sendemail_yes">
 					<input type="radio" name="approved_sendemail" id="approved_sendemail_yes" onclick="showHideApproved(1)" value="Yes" checked="checked" /> Yes 
 				</label>&nbsp;&nbsp;
@@ -116,11 +115,11 @@ function showApproveRejectForm($current_url, $menu_slug, $row) {
 			$cwshidden = "";
 		else
 			$cwshidden = "cwshidden ";
-		$ct .= '	
+		echo '	
 		<div id="rejected-email" class="'.$cwshidden.'email-msg">
 			<p id="p-rejected_sendemail">
 				<label for "rejected_sendemail">Send An Email Upon Rejection?</label>';
-				$ct .= '
+				echo '
 				<label class="radio" for="rejected_sendemail_yes">
 					<input type="radio" name="rejected_sendemail" required id="rejected_sendemail_yes" onclick="showHideRejected(1)" value="Yes" checked="checked" /> Yes 
 				</label>&nbsp;&nbsp;
@@ -139,12 +138,11 @@ function showApproveRejectForm($current_url, $menu_slug, $row) {
 			<label for "reviewer_comments">Want to add any comments? <span>These will be saved in the database for internal purposes only. They will not be shown to the Seller. </span></label>
 			<textarea id="reviewer_comments" name="reviewer_comments">';
 			if ($row->reviewer_comments != "")
-				$ct .= $row->reviewer_comments;
-			$ct .= '</textarea>
+				echo $row->reviewer_comments;
+			echo '</textarea>
 		</p>
 		<p><button type="submit" class="single_add_to_cart_button button">Save Item</button></p>
 	</form>';
-	return $ct;
 }
 ///////////////////////////////////////
 // MASTER INVENTORY display functions
@@ -206,18 +204,6 @@ function cwscsShowInventoryPage($current_url, $menu_slug, $results) {
 	return $ct;
 }
 
-// Display search and filter form for Inventory
-function showFilterMasterInv($current_url, $menu_slug, $search_sku, $search_kw) {
-	$ct = '
-	<form action="'.$current_url.'?page='.$menu_slug.'" method="post">
-		<label for="ssku"> Search on SKU: </label>
-		<input type="text" name="search_sku" id="search_sku" style="width:150px" value="'.$search_sku.'" \>&nbsp;&nbsp;
-		<label for="search_kw"> OR Search on keyword(s): </label>
-		<input type="text" name="search_kw" id="search_kw" style="width:300px" value="'.$search_kw.'" \>&nbsp;&nbsp;	
-		<input type="submit" name="view_lessons" value="Go >" class="et_pb_button view_lessons" />
-	</form>';
-	return $ct;
-}
 ///////////////////////////////////////
 // PAYMENTS display functions
 ///////////////////////////////////////
@@ -443,7 +429,7 @@ function cwscsShowItemDeets($row, $show_more=false, $show_pics=true) {
 				$image_full = wp_get_attachment_image_src($attachment_id, 'full');
 				if ( $image_full ) {
 					$ct .= '
-					<img class="alignnone size-single-thumbnail" src="'.$image_full[0].'" alt="item_image'.$i.'" width="'.$w.'" ><br />';
+					<img class="alignnone size-single-thumbnail" src="'.$image_full[0].'" alt="item_image 2" width="'.$w.'" ><br />';
 				} // END show image
 			}
 			if ($row->item_image3 > 0) {
@@ -451,7 +437,7 @@ function cwscsShowItemDeets($row, $show_more=false, $show_pics=true) {
 				$image_full = wp_get_attachment_image_src($attachment_id, 'full');
 				if ( $image_full ) {
 					$ct .= '
-					<img class="alignnone size-single-thumbnail" src="'.$image_full[0].'" alt="item_image'.$i.'" width="'.$w.'" ><br />';
+					<img class="alignnone size-single-thumbnail" src="'.$image_full[0].'" alt="item_image3" width="'.$w.'" ><br />';
 				} // END show image
 			}
 			if ($row->item_image4 > 0) {
@@ -459,7 +445,7 @@ function cwscsShowItemDeets($row, $show_more=false, $show_pics=true) {
 				$image_full = wp_get_attachment_image_src($attachment_id, 'full');
 				if ( $image_full ) {
 					$ct .= '
-					<img class="alignnone size-single-thumbnail" src="'.$image_full[0].'" alt="item_image'.$i.'" width="'.$w.'" ><br />';
+					<img class="alignnone size-single-thumbnail" src="'.$image_full[0].'" alt="item_image 4" width="'.$w.'" ><br />';
 				} // END show image
 			}
 		} // END show more

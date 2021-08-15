@@ -44,13 +44,14 @@ function cwscsShowSubmittedPage($current_url, $menu_slug, $results) {
 function showApproveRejectForm($current_url, $menu_slug, $row) {
 	$splits = cwscsGetAllSplits();
 	$ct = cwscsShowItemDeets($row, true, true); // show deets and all images
+	$_POST['item_id'] = intval($_POST['item_id']);
 	$ct .=
 	'<form action="'.$current_url.'?page='.$menu_slug.'" method="post" class="cwsreview_item">
 		<input type="hidden" name="item_id" value="'.$_POST['item_id'].'" />
-		<input type="hidden" name="item_image1" value="'.$row->item_image1.'" />
-		<input type="hidden" name="item_image2" value="'.$row->item_image2.'" />
-		<input type="hidden" name="item_image3" value="'.$row->item_image3.'" />
-		<input type="hidden" name="item_image4" value="'.$row->item_image4.'" />
+		<input type="hidden" name="item_image1" value="'.sanitize_text_field($row->item_image1).'" />
+		<input type="hidden" name="item_image2" value="'.sanitize_text_field($row->item_image2).'" />
+		<input type="hidden" name="item_image3" value="'.sanitize_text_field($row->item_image3).'" />
+		<input type="hidden" name="item_image4" value="'.sanitize_text_field($row->item_image4).'" />
 		<h3>Your Review</h3>';
 		// show store split
 		
@@ -311,6 +312,7 @@ function cwscsShowPaymentForm($current_url, $menu_slug, $item) {
 		<h2>Add Payment</h2>
 		<input type="hidden" name="item_id" value="'.$_POST['item_id'].'" />';
 		// sell price
+		$_POST['sell_price'] = intval($_POST['sell_price']);
 		if (isset($_POST['sell_price']) && $_POST['sell_price'] > 0) {
 			$ct .= '
 			<p>

@@ -103,15 +103,15 @@ class showPayouts {
 			$current_url  = set_url_scheme( 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_URL'] );
 			if (in_array("administrator", $roles) || in_array("editor", $roles)) {
 				if (isset($_POST['search_store_tag']))
-					$search_store_tag = $_POST['search_store_tag'];
+					$search_store_tag = sanitize_text_field($_POST['search_store_tag']);
 				else
 					$search_store_tag = "";
 				if (isset($_POST['search_kw']))
-					$search_kw = $_POST['search_kw'];
+					$search_kw = sanitize_text_field($_POST['search_kw']);
 				else
 					$search_kw = "";
 				if (isset($_POST['payment_type'])) {
-					$show = $_POST['payment_type'];
+					$show = sanitize_text_field($_POST['payment_type']);
 				} elseif (isset($atts['show']))
 					$show = $atts['show'];
 				$ct .= '<div class="adultlogindiv"><p style="text-align:left"><a href="/'.SYSTEM.'consignment/">Go back to Consignment Page</a> | <a href="/wp-login.php?action=logout">Logout</a></p>';

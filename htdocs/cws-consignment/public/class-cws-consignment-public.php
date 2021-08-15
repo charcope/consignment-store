@@ -156,10 +156,10 @@ class cws_consignment_Public {
 			$msg = "No task passed";
 			$status = 0;
 		} else
-			$thistask = $_POST['thistask']; //what shall we do
+			$thistask = sanitize_text_field($_POST['thistask']); //what shall we do
+			
 		if ($thistask == "getcatprices") {
-			$thiscat = $_POST['thiscat']; // may be blank
-			$thistask = $_POST['thistask']; // so far only getcatprices
+			$thiscat = sanitize_text_field($_POST['thiscat']); // may be blank
 			$status = 1;
 			$ct = "";
 			// get store categories
@@ -316,11 +316,13 @@ class cws_consignment_Public {
 			if (!$admin && $insert_id >= 0) {
 				$email_settings = cwscsGetMyEmails();
 				if (is_array($email_settings) && count($email_settings) == 2 && $email_settings[1] != "") {
-					$from = $email_settings[0];
-					$to = $email_settings[1];
+					$from = sanitize_email($email_settings[0]);
+					$to = sanitize_email($email_settings[1]);
+					$_POST['item_retail'] = intval($_POST['item_retail']);
+					$_POST['item_sale'] = intval($_POST['item_sale']);
 					
 					$subject = 'Someone has submitted an item in the store!';
-					$body = "From ".$_POST['email']."\r\nTitle: ".sanitize_text_field($_POST['item_title'])."\r\n"."Description: ".sanitize_textarea_field($_POST['item_desc'])."\r\nRetail Price: $".number_format($_POST['item_retail'])."\r\nStore Price: $".number_format($_POST['item_sale'])."\r\nSize: ".sanitize_text_field($_POST['item_size'])."\r\nColour: ".sanitize_text_field($_POST['item_colour'])."\r\nState of Item: ".sanitize_text_field($_POST['item_state'])."\r\nPhone: ".sanitize_text_field($_POST['phone'])."\r\nEmail: ".sanitize_text_field($_POST['email'])."\r\nAccepted Policy? ";
+					$body = "Title: ".sanitize_text_field($_POST['item_title'])."\r\n"."Description: ".sanitize_textarea_field($_POST['item_desc'])."\r\nRetail Price: $".number_format($_POST['item_retail'])."\r\nStore Price: $".number_format($_POST['item_sale'])."\r\nSize: ".sanitize_text_field($_POST['item_size'])."\r\nColour: ".sanitize_text_field($_POST['item_colour'])."\r\nState of Item: ".sanitize_text_field($_POST['item_state'])."\r\nPhone: ".sanitize_text_field($_POST['phone'])."\r\nEmail: ".sanitize_email($_POST['email'])."\r\nAccepted Policy? ";
 					if (isset($_POST['policy_accepted']) && $_POST['policy_accepted'] == 1)
 						$body .= 'Yes';
 					elseif (isset($_POST['policy_accepted']) && $_POST['policy_accepted'] == 2)
@@ -840,7 +842,7 @@ function cwscsAddItemToWC($post, $attachments, $status) {
 			if (isset($attach_id_str) && $attach_id_str != "") {
 				$meta_key = update_post_meta($post_id, '_product_image_gallery', $attach_id_str);
 				if (!$meta_key)
-					echo '<p>Could not add '.$attach_id_str.'</p>';
+					echo '<p>Could not add '.esc_html($attach_id_str).'</p>';
 			}
 		} // more than 1 image to add
 		// add category to product
@@ -899,7 +901,7 @@ function cwscsShowItemSummary() {
 		<strong>Colour: </strong>'.sanitize_text_field($_POST['item_colour']).'<br />
 		<strong>State of Item: </strong>'.sanitize_text_field($_POST['item_state']).'<br />
 		<strong>Phone: </strong>'.sanitize_text_field($_POST['phone']).'<br />
-		<strong>Email: </strong>'.sanitize_text_field($_POST['email']).'<br />
+		<strong>Email: </strong>'.sanitize_email($_POST['email']).'<br />
 		</p>';
 	return $ct;
 }
@@ -954,7 +956,7 @@ function cwscs_uploadImg() {
 		} // END name is not blank
 	} // no error
 	else {
-		$msg = 'Could not upload '.$_POST['tmpfilename'].', baseurl: '.$baseurl.', basedir: '.$basedir;
+		$msg = 'Could not upload '.esc_html($_POST['tmpfilename']).', baseurl: '.esc_html($baseurl).', basedir: '.esc_html($basedir);
 		foreach ($_FILES as $n => $v)
 			$msg .= "$n: $v, ";
 	}

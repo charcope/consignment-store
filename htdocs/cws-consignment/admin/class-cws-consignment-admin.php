@@ -145,18 +145,6 @@ class cws_consignment_Admin {
             'cws_cons_top_level',
             array($this, 'top_level_consignment')
         );
-
-        // master inventory
-		/* Remove 2021-08-04
-        $page_services_suffix = add_submenu_page(
-            'cws_cons_top_level',
-            __('Master Inventory', 'cws-consignment'),
-            '' . __('Master Inventory', 'cws-consignment'),
-            'manage_options',
-            'cws_cons_inventory',
-            array($this, 'cwscsmasterinventory_page')
-        );
-		*/
         // payouts
         $page_worker_suffix = add_submenu_page(
             'cws_cons_top_level',
@@ -225,6 +213,7 @@ class cws_consignment_Admin {
 				// Item selected?
 				if (isset($_POST['item_id'])) {
 					// was it an approve/reject?
+					$_POST['item_id'] = intval($_POST['item_id']);
 					if (isset($_POST['approved'])) {
 						if ($_POST['approved'] == 1) { // approved
 							if ($_POST['sku'] == "" || $_POST['sku'] <= 0) {
@@ -246,25 +235,25 @@ class cws_consignment_Admin {
 						if (is_array($results) || is_object($results)) { 
 							// show item details, all images and the approve/reject form
 							foreach ($results as $i => $row) {
-								if ($row->ID == $_POST['item_id']) {
-									echo 'Showing details for '.$_POST['item_id'].'<br />';
-									echo showApproveRejectForm($current_url, $menu_slug, $row);
+								if ($row->ID == intval($_POST['item_id'])) {
+									echo 'Showing details for '.esc_html($_POST['item_id']).'<br />';
+									echo esc_html(showApproveRejectForm($current_url, $menu_slug, $row));
 									$found = true;
 								}
 							}
 							if (!$found)
-								echo '<p class="failmsg">Could not find match for '.$_POST['item_id'].'</p>';
+								echo '<p class="failmsg">Could not find match for '.esc_html($_POST['item_id']).'</p>';
 						} else {
-							echo '<p>Error fetching inventory: '.$results.'</p>';
+							echo '<p>Error fetching inventory.</p>';
 						}
 					}
 				} else
 					$results = cwscsGetInventory(0); // get all submitted, not approved items
 					
 				if ($msg != "")
-					echo $msg;
+					echo esc_html($msg);
 					
-				echo cwscsShowSubmittedPage($current_url, $menu_slug, $results);
+				echo esc_html(cwscsShowSubmittedPage($current_url, $menu_slug, $results));
 			} else {
 				echo '<p class="failmsg">You are not authorized to be here. </p>';
 			}
@@ -279,68 +268,11 @@ class cws_consignment_Admin {
         wp_localize_script('ea-appointments', 'ea_connections', $this->models->get_connections_combinations());
 		*/
     }
-	public function cwscsmasterinventory_page() {
-		$msg = "";
-		if ( is_user_logged_in() ) {
-			echo '<h1>CWS Consignment Store</h1>
-			<h1>Master Inventory</h1>
-			<p>Lists all items submitted through the Add Item form on the website. If a product is added directly through WooCommerce, it will not show here. Rejected items are not displayed since they are deleted from the database.</p>';
-			
-			// initialize vars
-			$menu_slug = "cws_cons_inventory";
-			if (is_ssl())
-				$http = 'https';
-			else	
-				$http = 'http';
-			$current_url = set_url_scheme( 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_URL'] );
-			// get roles
-			global $current_user;
-			wp_get_current_user();
-			$roles = $current_user->roles;
-			
-			if (in_array("administrator", $roles)) {
-				// Display functions
-				require_once plugin_dir_path( __FILE__ ) . 'partials/cws-consignment-admin-display.php';
 
-				// Anything from search form?
-				if (isset($_POST['search_sku'])) {
-					$search_sku = $_POST['search_sku'];
-				} else
-					$search_sku = "";
-				if (isset($_POST['search_kw']))
-					$search_kw = $_POST['search_kw'];
-				else
-					$search_kw = "";
-				// get the inventory
-				if ($search_sku == "" && $search_kw == "") { // no search terms
-					$results = cwscsGetInventory(-1); // get all inventory items
-				} elseif ($search_sku != "") {
-					$results = cwscsGetInventoryBySKU($search_sku);	
-				} elseif ($search_kw != "") {
-					$results = cwscsGetInventoryByKw($search_kw); // get items that match keywords
-				}
-				// Show search and filter form
-				echo showFilterMasterInv($current_url, $menu_slug, $search_sku, $search_kw);	
-				
-				// show results	
-				echo cwscsShowInventoryPage($current_url, $menu_slug, $results);
-			} else { // Not an admin
-				echo '<p class="failmsg">You are not authorized to be here. </p>';
-			}
-		} else // END not logged in
-			echo '<p class="failmsg">You are not authorized to be here. </p>';
-		/*
-        $settings = $this->options->get_options();
-        $settings['date_format'] = $this->datetime->convert_to_moment_format(get_option('date_format', 'F j, Y'));
-        wp_localize_script('ea-appointments', 'ea_settings', $settings);
-        wp_localize_script('ea-appointments', 'ea_app_status', $this->logic->getStatus());
-        wp_localize_script('ea-appointments', 'ea_connections', $this->models->get_connections_combinations());
-		*/
-    }
 	public function cwscspayments_page() {
 		$msg = "";
 		if ( is_user_logged_in() ) {
-			echo '<h1>Payments to Sellers</h1
+			echo '<h1>Payments to Sellers</h1>
 			<p>Below is the list of items that were submitted to the consignment store and have now been sold. Record payments to the sellers here.</p>';
 			// initialize vars
 			$menu_slug = "cws_cons_payments";
@@ -356,11 +288,11 @@ class cws_consignment_Admin {
 			
 			// handle submission from the filter form
 			if (isset($_POST['search_sku']))
-				$search_sku = $_POST['search_sku'];
+				$search_sku = sanitize_text_field($_POST['search_sku']);
 			else
 				$search_sku = "";
 			if (isset($_POST['search_kw']))
-				$search_kw = $_POST['search_kw'];
+				$search_kw = sanitize_text_field($_POST['search_kw']);
 			else
 				$search_kw = "";
 			if (isset($_POST['payment_type'])) {
@@ -375,7 +307,7 @@ class cws_consignment_Admin {
 				} else { 
 					// fetch the item
 					$item = cwscsGetInventoryByID($_POST['item_id']);
-					echo cwscsShowPaymentForm($current_url, $menu_slug, $item);
+					echo esc_html(cwscsShowPaymentForm($current_url, $menu_slug, $item));
 					// show the form to save a payment, show any payment so far
 				} // END show form
 			} // END form submitted
@@ -384,8 +316,8 @@ class cws_consignment_Admin {
 			$results = cwscsGetInventorySold($show, $search_sku, $search_kw);	
 			// Show the data
 			if ($msg != "")
-				echo $msg;
-			echo cwscsShowPayoutsPage($current_url, $menu_slug, $search_sku, $search_kw, $show, $results);
+				echo esc_html($msg);
+			echo esc_html(cwscsShowPayoutsPage($current_url, $menu_slug, $search_sku, $search_kw, $show, $results));
 		} // END is logged in
 		else
 			echo '<p class="failmsg">You are not authorized to be here. </p>';
@@ -407,7 +339,7 @@ class cws_consignment_Admin {
 		
 			// Display functions
 			require_once plugin_dir_path( __FILE__ ) . 'partials/cws-consignment-admin-display.php';
-			echo cwscsShowSettingsMenu($current_url, $menu_slug);
+			echo esc_html(cwscsShowSettingsMenu($current_url, $menu_slug));
 		} else
 			echo '<p class="failmsg">You are not authorized to be here. </p>';
 	}
@@ -417,7 +349,7 @@ class cws_consignment_Admin {
 	public function cwscsdocs_page() {
 		// Display functions
 		require_once plugin_dir_path( __FILE__ ) . 'partials/cws-consignment-admin-display.php';
-		echo cwscsShowDocsPage();
+		echo esc_html(cwscsShowDocsPage());
 	}
 	/**
 	 * Handles my AJAX request.
@@ -630,17 +562,20 @@ function cwscsApproveItem() {
 	$wpdb->show_errors();
 	$msg = "";
 	$url = get_site_url();
+	$_POST['item_id'] = intval($_POST['item_id']);
 	if (!isset($_POST) || !isset($_POST['item_id']) || $_POST['item_id'] <= 0) {
 		$msg .= '<p class="failmsg">There was an error approving this item. Please refresh and try again. </p>';
 	} elseif ($_POST['sku'] == "" || $_POST['sku'] <= 0) {
 		$msg .= '<p class="failmsg">You must enter a unique SKU.</p>';
 	} else {
 		// check that this sku is not already in WC
-		$woo = cwscsGetWooBySkuAdmin($_POST['sku']);
+		$woo = cwscsGetWooBySkuAdmin(sanitize_text_field($_POST['sku']));
 		if (isset($woo['status']) && $woo['status'] == 1) {
 			$msg .= '<p class="failmsg">That sku already exists in the store. Please enter a different one.</p>';
 		}
 	}
+	
+	
 	if ($msg == "") {
 		// APPROVED. Update inventory item as approved, with comments
 		$result = $wpdb->update ( $prefix.'cwscs_inventory',
@@ -677,16 +612,16 @@ function cwscsApproveItem() {
 		if (isset($_POST['approved_sendemail']) && $_POST['approved_sendemail'] == "Yes" && isset($_POST['approved-email']) && $_POST['approved-email'] != "" && isset($_POST['approved-body']) && $_POST['approved-body'] != "") {
 			$emails = cwscsGetMyEmails();
 			if (isset($emails) && isset($emails[0]) && $emails[0] != "") {
-				$to = $_POST['approved-email'];
-				$from = $emails[0];
+				$to = sanitize_email($_POST['approved-email']);
+				$from = sanitize_email($emails[0]);
 				$body = sanitize_textarea_field($_POST['approved-body']);
 				$headers="From: ".$from."\r\n";
 				$subject = get_option('siteurl').' has accepted your item!';
 				$test = wp_mail($to, $subject, $body, $headers);
 				if ($test)
-					$msg .= '<p class="successmsg">An email sent to '.$_POST['approved-email'].'. </p>';
+					$msg .= '<p class="successmsg">An email sent to '.sanitize_email($_POST['approved-email']).'. </p>';
 				else
-					$msg .= '<p class="failmsg">Could not send email to '.$_POST['approved-email'].' from '.$from.', subject: '.$subject.', body: '.$body.'. </p>';
+					$msg .= '<p class="failmsg">Could not send email to '.sanitize_email($_POST['approved-email']).' from '.$from.', subject: '.$subject.', body: '.$body.'. </p>';
 			}
 		}
 	} // END no errors after add to woo, update to inventory
@@ -702,6 +637,7 @@ function cwscsRejectItem() {
 	$ok = true;
 	$url = get_site_url();
 	$headers="From: no-reply@".$url."\r\n";
+	$_POST['item_id'] = intval($_POST['item_id']);
 	if (!isset($_POST) || !isset($_POST['item_id']) || $_POST['item_id'] <= 0) {
 		$msg .= '<p class="failmsg">There was an error rejecting this item. Please refresh and try again. </p>';
 	} else {
@@ -709,6 +645,7 @@ function cwscsRejectItem() {
 		if ($res == 1) { // deleted
 			// Remove images
 			for ($i=1; $i<=4; $i++) {
+				$_POST['item_image'.$i] = sanitize_text_field($_POST['item_image'.$i]);
 				if (isset($_POST['item_image'.$i]) && $_POST['item_image'.$i] > 0) {
 					$isImageDeleted = wp_delete_attachment($_POST['item_image'.$i], false ); // send to trash
 					if (!$isImageDeleted)
@@ -720,6 +657,7 @@ function cwscsRejectItem() {
 			else
 				$msg = '<p class="warnmsg">Successfully deleted item from submitted items. '.$msg.'</p>';	
 		} else { // error
+			$_POST['id'] = intval($_POST['id']);
 			$msg = '<p class="failmsg">Could not delete item from inventory. </p>';
 			$test = cwscsLogError("admin", "class-cws-consignment-admin-php", "cwscsRejectItem", $url, "Could not delete inventory ".$_POST['id'].'. Error: '.$wpdb->last_error);
 			$ok = false;
@@ -730,19 +668,19 @@ function cwscsRejectItem() {
 	if (isset($_POST['rejected_sendemail']) && $_POST['rejected_sendemail'] == "Yes" && isset($_POST['rejected-email']) && $_POST['rejected-email'] != "" && isset($_POST['rejected-body']) && $_POST['rejected-body'] != "") {
 		$emails = cwscsGetMyEmails();
 		if (isset($emails) && isset($emails[0]) && $emails[0] != "") {
-			$to = $_POST['rejected-email'];
-			$from = $emails[0];
+			$to = sanitize_email($_POST['rejected-email']);
+			$from = sanitize_email($emails[0]);
 			$body = sanitize_textarea_field($_POST['rejected-body']);
 			$headers="From: ".$from."\r\n";
 			$subject = 'Update from '.get_option('siteurl');
 			$test = wp_mail($to, $subject, $body, $headers);
 			if ($test)
-				$msg .= '<p class="successmsg">An email was sent to '.$_POST['rejected-email'].'. </p>';
+				$msg .= '<p class="successmsg">An email was sent to '.sanitize_email($_POST['rejected-email']).'. </p>';
 			else
-				$msg .= '<p class="failmsg">Could not send email to '.$_POST['rejected-email'].' from '.$from.', subject: '.$subject.', body: '.$body.'. </p>';
+				$msg .= '<p class="failmsg">Could not send email to '.sanitize_email($_POST['rejected-email']).' from '.$from.', subject: '.$subject.', body: '.$body.'. </p>';
 		}
 	}
-	$msg .= '<p class="successmsg">The item has been saved to the dataase as REJECTED. </p>';
+	$msg .= '<p class="successmsg">The item has been saved to the database as REJECTED. </p>';
 	return $msg;
 }
 
@@ -753,6 +691,7 @@ function cwscsSavePayment() {
 	$wpdb->show_errors();
 	$msg = "";
 	$url = get_site_url();
+	$_POST['item_id'] = intval($_POST['item_id']);
 	if (!isset($_POST) || !isset($_POST['item_id']) || $_POST['item_id'] <= 0) {
 		$msg .= '<p class="failmsg">There was an error rejecting this item. Please refresh and try again. </p>';
 	} elseif (!isset($_POST['paidpayment']) || $_POST['paidpayment'] < 0) {
@@ -763,7 +702,7 @@ function cwscsSavePayment() {
 		$paid = $_POST['paidpayment'] * 1;
 	    $result = $wpdb->query( $wpdb->prepare("UPDATE $table_name SET paid = ".$paid." WHERE ID =".$id));
 		if ($wpdb->last_error) {
-			$tmp = 'Could not save payment for item:  '.sanitize_text_field($_POST['item_id']).' Error is '.$wpdb->last_error.'. ';
+			$tmp = 'Could not save payment for item:  '.$_POST['item_id'].' Error is '.$wpdb->last_error.'. ';
 			$msg = '<p class="failmsg">'.$tmp.'</p>';
 			// logerror
 		} elseif (!$result) { // ok but no update
@@ -1036,9 +975,7 @@ function cwscsAddItemToWCadmin($post, $status) {
 		if (isset($item->item_colour) && $item->item_colour != "")
 			$desc .= "\r\n".$item->item_colour;	
 		if (isset($item->item_state) && $item->item_state != "")
-			$desc .= "\r\nState of item: ".$item->item_state;	
-		if (isset($item->item_cat) && $item->item_cat > 0)
-			$desc .= "\r\nCategory: ".$item->item_cat;			
+			$desc .= "\r\nState of item: ".$item->item_state;			
 		$options = array(
 			'post_title' => $item->item_title,
 			"post_type" => "product", 
@@ -1110,7 +1047,7 @@ function cwscsAddItemToWCadmin($post, $status) {
 				$meta_key = update_post_meta($post_id, '_product_image_gallery', $attach_id_str);
 				if (!$meta_key)
 					$msg =  '<p c>Could not add '.$attach_id_str.'</p>';
-					// logerror
+					// log error
 			}
 		} // more than 1 image to add
 		

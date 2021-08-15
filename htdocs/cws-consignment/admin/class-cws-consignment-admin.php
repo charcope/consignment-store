@@ -237,7 +237,7 @@ class cws_consignment_Admin {
 							foreach ($results as $i => $row) {
 								if ($row->ID == intval($_POST['item_id'])) {
 									echo 'Showing details for '.esc_html($_POST['item_id']).'<br />';
-									echo esc_html(showApproveRejectForm($current_url, $menu_slug, $row));
+									showApproveRejectForm($current_url, $menu_slug, $row);
 									$found = true;
 								}
 							}
@@ -253,7 +253,7 @@ class cws_consignment_Admin {
 				if ($msg != "")
 					echo esc_html($msg);
 					
-				echo esc_html(cwscsShowSubmittedPage($current_url, $menu_slug, $results));
+				cwscsShowSubmittedPage($current_url, $menu_slug, $results); // will display form
 			} else {
 				echo '<p class="failmsg">You are not authorized to be here. </p>';
 			}

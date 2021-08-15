@@ -294,6 +294,7 @@ class cws_consignment_Public {
 					$insert_id = cwscsAddItem($_POST, $attachments);
 				else {
 					$msg .= '<p class="failmsg">Please select an item category. </p>';
+					$insert_id = -1;
 				}
 			} else
 				$insert_id = -1;		
@@ -368,7 +369,7 @@ class cws_consignment_Public {
 				<p id="p-item_cat">
 					<label for "item_cat">Select a Category</label>
 					<select id="item_cat" name="item_cat" required>
-						<option value=0>Choose &hellip;</option>';
+						<option value="">Choose &hellip;</option>';
 						foreach ($cats as $i => $obj) {
 							$ct .= '<option value="'.$obj->term_id.'">'.$obj->name.'</option>';
 						}

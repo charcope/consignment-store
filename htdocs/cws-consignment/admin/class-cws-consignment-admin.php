@@ -220,11 +220,11 @@ class cws_consignment_Admin {
 								$msg .= '<p class="failmsg">You must enter a unique SKU.</p>';
 							} else {
 								// update item in inventory, save to WC, email the sender
-							$msg .= cwscsApproveItem(); 
+								cwscsApproveItem(); 
 							}
 						} elseif ($_POST['approved'] == 2) { // rejected
 							// delete item from inventory, delete all images,  email the sender
-							$msg .= cwscsRejectItem(); 
+							cwscsRejectItem(); 
 						} 
 						$results = cwscsGetInventory(0); // get all submitted, not approved items
 					} // END approved / rejected
@@ -303,11 +303,11 @@ class cws_consignment_Admin {
 			if (isset($_POST['item_id'])) {
 				// was it to save a payment?
 				if (isset($_POST['paidpayment'])) {
-					$msg .= cwscsSavePayment();
+					 cwscsSavePayment();
 				} else { 
 					// fetch the item
 					$item = cwscsGetInventoryByID($_POST['item_id']);
-					echo esc_html(cwscsShowPaymentForm($current_url, $menu_slug, $item));
+					cwscsShowPaymentForm($current_url, $menu_slug, $item);
 					// show the form to save a payment, show any payment so far
 				} // END show form
 			} // END form submitted
@@ -315,9 +315,7 @@ class cws_consignment_Admin {
 			// Get the data
 			$results = cwscsGetInventorySold($show, $search_sku, $search_kw);	
 			// Show the data
-			if ($msg != "")
-				echo esc_html($msg);
-			echo esc_html(cwscsShowPayoutsPage($current_url, $menu_slug, $search_sku, $search_kw, $show, $results));
+			cwscsShowPayoutsPage($current_url, $menu_slug, $search_sku, $search_kw, $show, $results);
 		} // END is logged in
 		else
 			echo '<p class="failmsg">You are not authorized to be here. </p>';
@@ -339,7 +337,7 @@ class cws_consignment_Admin {
 		
 			// Display functions
 			require_once plugin_dir_path( __FILE__ ) . 'partials/cws-consignment-admin-display.php';
-			echo esc_html(cwscsShowSettingsMenu($current_url, $menu_slug));
+			cwscsShowSettingsMenu($current_url, $menu_slug);
 		} else
 			echo '<p class="failmsg">You are not authorized to be here. </p>';
 	}
@@ -349,11 +347,10 @@ class cws_consignment_Admin {
 	public function cwscsdocs_page() {
 		// Display functions
 		require_once plugin_dir_path( __FILE__ ) . 'partials/cws-consignment-admin-display.php';
-		echo esc_html(cwscsShowDocsPage());
+		cwscsShowDocsPage();
 	}
-	/**
-	 * Handles my AJAX request.
-	 */
+	
+	// Handles my AJAX request.
 	public function cwscs_save_settings() {
 		// check referrer
 		//check_ajax_referer( 'cwscs_doajax' );
@@ -625,7 +622,7 @@ function cwscsApproveItem() {
 			}
 		}
 	} // END no errors after add to woo, update to inventory
-	return $msg;
+	echo $msg;
 }
 
 // Administrator rejected a submitted item
@@ -680,8 +677,7 @@ function cwscsRejectItem() {
 				$msg .= '<p class="failmsg">Could not send email to '.sanitize_email($_POST['rejected-email']).' from '.$from.', subject: '.$subject.', body: '.$body.'. </p>';
 		}
 	}
-	$msg .= '<p class="successmsg">The item has been saved to the database as REJECTED. </p>';
-	return $msg;
+	echo '<p class="successmsg">The item has been saved to the database as REJECTED. </p>';
 }
 
 // Administrator added a payment
@@ -712,7 +708,7 @@ function cwscsSavePayment() {
 	}// sku and item_id
 	if ($msg == "")
 		$msg = '<p class="successmsg">Payment of $'.number_format($_POST['paidpayment'],2).' for item has been saved successfully. </p>';	
-	return $msg;
+	echo $msg;
 }
 
 //////////////////////////////////
@@ -768,7 +764,7 @@ function cwscsSaveSetting($cwscs_key, $cwscs_value) {
 	$url = get_site_url();
 	
 	if (!isset($cwscs_key) || $cwscs_key == "") {
-		$msg .= 'There was a problem saving the settings. Please refresh and try again.';
+		$msg .= 'There was a problem saving the settings because the key was not set. Please refresh and try again.';
 	} elseif (!isset($cwscs_value)) {
 		$msg .= 'Please enter a valid setting.';
 	} else {

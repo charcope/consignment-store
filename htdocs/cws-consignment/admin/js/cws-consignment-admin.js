@@ -70,8 +70,13 @@
 		$('.btn-save-settings').on("click", function() {
 			startAdminSpinner("Please wait...")
 			var thisid = $(this).attr("id");
+			var cwscs_key = "";
 			var cwscs_value = "";
 			var method = "";
+			if (thisid == "btnsave_1")
+				console.log('TEST: match ' + thisid);
+			else
+				console.log('TEST: no match ' + thisid);
 			switch (thisid) {
 				// first get data 
 				case "btnsave_1":
@@ -141,8 +146,11 @@
 					}
 					break;	
 				default:
-					var method = "";	
+					console.log('TEST: not found');
+					var method = "";
+					break;
 			}
+			console.log('TEST: at end and ' + cwscs_key);
 			if (cwscs_key == "") {
 				$('#' + contentid).html('<p class="failmsg">Could not update. Please refresh and try again.</p>');
 				return;
@@ -160,11 +168,11 @@
 					$('#' + contentid).html("Could not save settings at this time. Please refresh and try again.");
 				} else if (results.status == 0) { // error
 					if (results.msg && results.msg != "") {
-						$('#' + contentid).html('<p class="failmsg">' + msg + '</p>');
+						$('#' + contentid).html('<p class="failmsg">' + results.msg + '</p>');
 					} else {
 						$('#' + contentid).html('<p class="failmsg">Sorry! There was an error saving the settings.</p>');
 					}
-					console.log("TEST: results", results);
+					console.log("TEST: results, msg in #" + contentid, results);
 				} else {
 					console.log('TEST: good results');
 					switch (thisid) {

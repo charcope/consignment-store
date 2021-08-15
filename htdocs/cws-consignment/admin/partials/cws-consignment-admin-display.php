@@ -42,7 +42,7 @@ function cwscsShowSubmittedPage($current_url, $menu_slug, $results) {
 // They selected an item to approve or reject
 function showApproveRejectForm($current_url, $menu_slug, $row) {
 	$splits = cwscsGetAllSplits();
-	echo cwscsShowItemDeets($row, true, true); // show deets and all images
+	cwscsShowItemDeets($row, true, true); // show deets and all images
 	$_POST['item_id'] = intval($_POST['item_id']);
 	echo
 	'<form action="'.$current_url.'?page='.$menu_slug.'" method="post" class="cwsreview_item">
@@ -144,78 +144,18 @@ function showApproveRejectForm($current_url, $menu_slug, $row) {
 		<p><button type="submit" class="single_add_to_cart_button button">Save Item</button></p>
 	</form>';
 }
-///////////////////////////////////////
-// MASTER INVENTORY display functions
-///////////////////////////////////////
-function cwscsShowInventoryPage($current_url, $menu_slug, $results) {
-	$ct = '
-	<div class="cwscs_admin">';
-	$ctr = 0;
-		
-	if (is_array($results) || is_object($results)) {
-		$ct .= '<hr /><p>This table shows the '.count($results).' items that have been submitted through the consignment store. </p><table class="cwscs_admin_table">
-		<thead>
-			<tr>
-				<th width="10%">Date Added</th>
-				<th width="15%">Seller</th>
-				<th width="15%">Picture</th>
-				<th width="30%">Description</th>
-				<th width="15%">Status</th>
-			</tr>
-		</thead><tbody>';
-		foreach ($results as $i => $row) {
-			$ctr++;
-			$ct .= '
-			<tr>
-				<td>'.$ctr.'. '.$row->date_added.'</td>
-				<td>Name: '.$row->seller_name.', '.$row->email.', <br />'.$row->phone.'<br />Split: '.$row->store_split.'%</td>
-				<td>';
-				if ($row->item_image1 > 0) {
-					$attachment_id = $row->item_image1;
-					$image_thumbnail = wp_get_attachment_image_src($attachment_id, 'single-thumbnail');
-					if ( $image_thumbnail ) {
-						$ct .= '
-						<img class="alignnone size-single-thumbnail" src="'.$image_thumbnail[0].'" alt="item_image1" width="100" >';
-					} // END show image
-				}
-				$ct .= '</td>
-				<td>'.cwscsShowItemDeets($row, false, false).'</td>
-				<td>';
-				if ($row->approved == 0)
-					$ct .= 'Submitted';
-				elseif ($row->approved == 1) {
-					// store status
-					if (isset($row->woo['woo_stock']) && $row->woo['woo_stock'] == "instock")
-						$ct .= 'In Store & In Stock';
-					elseif (isset($row->woo['woo_stock']) && $row->woo['woo_stock'] == "outofstock") {
-						$ct .= 'Sold ';
-						if (isset($row->woo['woo_sales'])) // woo_sales is qty sold
-							$ct .= 'for $'.number_format($row->woo['woo_price'],2);
-					} else
-						$ct .= 'Approved';
-				} else
-					$ct .= $row->approved;
-				$ct .= '</td>
-			</tr>';
-		}
-		$ct .= '</tbody><tfoot><th colspan=6>Total Items in inventory: '.$ctr.'</th></tr></tfoot></table>';
-	} elseif (is_string($results) && $results != "")
-		$ct .= $results;
-	return $ct;
-}
 
 ///////////////////////////////////////
 // PAYMENTS display functions
 ///////////////////////////////////////
 function cwscsShowPayoutsPage($current_url, $menu_slug, $search_sku, $search_kw, $show, $results) {
 	$ctr = 0;
-	$ct = "";
 	// Show search and filter form
-	$ct .= showFilterPayouts($current_url, $menu_slug, $search_sku, $search_kw, $show);
+	showFilterPayouts($current_url, $menu_slug, $search_sku, $search_kw, $show);
 	
 	// loop through results and see if sold		
 	if (is_array($results) || is_object($results)) {
-		$ct .= 'Showing '.count($results).' Sold Items in inventory. </p>
+		echo 'Showing '.count($results).' Sold Items in inventory. </p>
 		<table class="cwscs_admin_table">
 			<thead>
 				<tr>
@@ -229,22 +169,24 @@ function cwscsShowPayoutsPage($current_url, $menu_slug, $search_sku, $search_kw,
 			<tbody>';
 		foreach ($results as $i => $row) {	
 			$ctr++;
-			$ct .= 
+			echo 
 			'<tr>
 				<td>'.$ctr.'. '.$row->date_added.'</td>
 				<td>'.$row->seller_name.', '.$row->email.', '.$row->phone.'<br />Split: '.$row->store_split.'</td>
-				<td>'.cwscsShowItemDeets($row, false, true).'</td>
+				<td>';
+				cwscsShowItemDeets($row, false, true);
+				echo '</td>
 				<td>';
 				// store status
 				if (isset($row->woo['woo_stock']) && $row->woo['woo_stock'] == "instock")
-					$ct .= 'In Store & In Stock';
+					echo 'In Store & In Stock';
 				elseif (isset($row->woo['woo_stock']) && $row->woo['woo_stock'] == "outofstock") {
-					$ct .= 'Sold ';
+					echo 'Sold ';
 					if (isset($row->woo['woo_sales'])) // qty sold
-						$ct .= 'for $'.number_format($row->woo['woo_price'],2);
+						echo 'for $'.number_format($row->woo['woo_price'],2);
 				} else
-					$ct .= 'Approved';
-				$ct .= '</td>
+					echo 'Approved';
+				echo '</td>
 				<td align="center">
 					<form action="'.$current_url.'?page='.$menu_slug.'" method="post">
 						<input type="hidden" value="'.$row->ID.'" name="item_id">
@@ -254,7 +196,7 @@ function cwscsShowPayoutsPage($current_url, $menu_slug, $search_sku, $search_kw,
 				</td>
 			</tr>';
 		} // END loop on results
-		$ct .= '
+		echo '
 		</tbody><tfoot>
 			<tr>
 				<th colspan=6>Total Items: '.$ctr.'</th>
@@ -262,69 +204,66 @@ function cwscsShowPayoutsPage($current_url, $menu_slug, $search_sku, $search_kw,
 		</tfoot></table>';
 	} // END there are results
 	elseif (is_string($results) && $results != "") {
-		$ct .= $results;
+		echo $results;
 	} else
-		$ct .= '<p>No results found: '.$results.'</p>';
-	return $ct;
+		echo '<p>No results found: '.$results.'</p>';
 }
 // Display search and filter form for Payouts
 function showFilterPayouts($current_url, $menu_slug, $search_sku, $search_kw, $show="unpaid") {
 	$types = array("unpaid", "paid", "all");
-	$ct = '
+	echo '
 	<form action="'.$current_url.'?page='.$menu_slug.'" method="post" class="cwscsradio_group">
 		<label><strong>Show:</strong> </label>';
 	foreach ($types as $i => $t) {
-		$ct .= '
+		echo '
 		<label for="'.$t.'">
 			<input type="radio" name="payment_type" id="'.$t.'" value="'.$t.'"';
 		if (isset($show) && $show == $t) {
-			$ct .= ' checked="checked" ';
+			echo ' checked="checked" ';
 		}
-		$ct .= '/> '.ucfirst($t).'</label>&nbsp;&nbsp;';
+		echo '/> '.ucfirst($t).'</label>&nbsp;&nbsp;';
 	} // END loop on types
-	$ct .= '<br />
+	echo '<br />
 		<label for="store_tag"><strong>Search on SKU:</strong> </label>
 		<input type="text" name="search_sku" id="search_sku" style="width:150px" value="'.$search_sku.'" \>&nbsp;&nbsp;
 		<label for="search_kw">OR <strong>Search on keyword(s):</strong> </label>
 		<input type="text" name="search_kw" id="search_kw" style="width:300px" value="'.$search_kw.'" \>&nbsp;&nbsp;
 		<input type="submit" name="view_lessons" value="Go >" class="single_add_to_cart_button button" />
 	</form>';
-	return $ct;	
 }
 function cwscsShowPaymentForm($current_url, $menu_slug, $item) {
 	$splits = cwscsGetAllSplits();
-	$ct = '
+	echo '
 	<form action="'.$current_url.'?page='.$menu_slug.'" method="post" class="cwscsradio_group">
 		<h2>Add Payment</h2>
 		<input type="hidden" name="item_id" value="'.$_POST['item_id'].'" />';
 		// sell price
 		$_POST['sell_price'] = intval($_POST['sell_price']);
 		if (isset($_POST['sell_price']) && $_POST['sell_price'] > 0) {
-			$ct .= '
+			echo '
 			<p>
 				<label for "sell_price">Sold for: $'.number_format($_POST['sell_price'],2).'</label>
 			</p>';
 		}
 		// show store split
-		$ct .= '
+		echo '
 		<p id="p-store_split">
 			<label for "store_split">Store Split: ';
 			foreach ($splits as $i => $s) {
 				if ($item->store_split == $i)
-					$ct .= $s;
+					echo $s;
 			}
-			$ct .= '</label>
+			echo '</label>
 		</p>
 		<p id="p-payment" >
 			<label for "payment">Do you want to record a payment to the Seller? </label>
 			<input type="text" id="payment" name="paidpayment" maxlength=8 value="';
 			if (isset($item->paid) && $item->paid > 0)
-				$ct .= $item->paid;
-			$ct .= '" /> 
+				echo $item->paid;
+			echo '" /> 
 		</p>
 		<p><button type="submit" class="single_add_to_cart_button button">Save Payment</button></p>
 	</form>';
-	return $ct;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Settings page
@@ -359,7 +298,7 @@ function cwscsShowSettingsMenu($current_url, $menu_slug) {
 	echo '
 	<div class="clear"></div>
 	<div class="button-wrap">
-		<button class="button button-primary btn-save-settings" id="btn_savegeneral">Save General Settings</button>
+		<button class="button button-primary btn-save-settings" id="btnsave_1">Save Categories</button>
 	</div>';
 	// initialize
 	?>
@@ -413,13 +352,12 @@ function cwscsShowItemDeets($row, $show_more=false, $show_pics=true) {
 		$w = 200; // bigger images
 	else
 		$w = 100;
-	$ct = '';
 	if ($show_pics) {
 		if ($row->item_image1 > 0) {
 			$attachment_id = $row->item_image1;
 			$image_thumbnail = wp_get_attachment_image_src($attachment_id, 'single-thumbnail');
 			if ( $image_thumbnail ) {
-				$ct .= '
+				echo '
 				<img class="alignnone size-single-thumbnail" src="'.$image_thumbnail[0].'" alt="item_image1" width="'.$w.'" >';
 			} // END show image
 		}
@@ -428,7 +366,7 @@ function cwscsShowItemDeets($row, $show_more=false, $show_pics=true) {
 				$attachment_id = $row->item_image2;
 				$image_full = wp_get_attachment_image_src($attachment_id, 'full');
 				if ( $image_full ) {
-					$ct .= '
+					echo '
 					<img class="alignnone size-single-thumbnail" src="'.$image_full[0].'" alt="item_image 2" width="'.$w.'" ><br />';
 				} // END show image
 			}
@@ -436,7 +374,7 @@ function cwscsShowItemDeets($row, $show_more=false, $show_pics=true) {
 				$attachment_id = $row->item_image3;
 				$image_full = wp_get_attachment_image_src($attachment_id, 'full');
 				if ( $image_full ) {
-					$ct .= '
+					echo '
 					<img class="alignnone size-single-thumbnail" src="'.$image_full[0].'" alt="item_image3" width="'.$w.'" ><br />';
 				} // END show image
 			}
@@ -444,29 +382,28 @@ function cwscsShowItemDeets($row, $show_more=false, $show_pics=true) {
 				$attachment_id = $row->item_image4;
 				$image_full = wp_get_attachment_image_src($attachment_id, 'full');
 				if ( $image_full ) {
-					$ct .= '
+					echo '
 					<img class="alignnone size-single-thumbnail" src="'.$image_full[0].'" alt="item_image 4" width="'.$w.'" ><br />';
 				} // END show image
 			}
 		} // END show more
 	} // END show pics
-	$ct .= '<br />
+	echo '<br />
 	<strong>'.sanitize_text_field($row->item_title).'</strong><br />';
 	if ($row->item_desc != "")
-		$ct .= '<strong>Description: </strong>'.sanitize_textarea_field($row->item_desc).'. ';
+		echo  '<strong>Description: </strong>'.sanitize_textarea_field($row->item_desc).'. ';
 	if ($row->item_retail > 0)
-		$ct .= '<strong>Retail Price: </strong>$'.number_format($row->item_retail).'. ';
+		echo  '<strong>Retail Price: </strong>$'.number_format($row->item_retail).'. ';
 	if ($row->item_sale > 0)
-		$ct .= '<strong>Store Price: </strong>$'.number_format($row->item_sale).'. ';
+		echo  '<strong>Store Price: </strong>$'.number_format($row->item_sale).'. ';
 	if ($row->item_size != "")
-		$ct .= '<strong>Size: </strong>'.sanitize_text_field($row->item_size).'. ';
+		echo  '<strong>Size: </strong>'.sanitize_text_field($row->item_size).'. ';
 	if ($row->item_colour != "")
-		$ct .= '<strong>Colour: </strong>'.sanitize_text_field($row->item_colour).'. ';
+		echo  '<strong>Colour: </strong>'.sanitize_text_field($row->item_colour).'. ';
 	if ($row->item_state != "")
-		$ct .= '<strong>State of Item: </strong>'.sanitize_text_field($row->item_state).'. ';
+		echo  '<strong>State of Item: </strong>'.sanitize_text_field($row->item_state).'. ';
 	if ($row->sku != "")
-		$ct .= '<strong>SKU: </strong>'.sanitize_text_field($row->sku).'. ';
-	return $ct;
+		echo  '<strong>SKU: </strong>'.sanitize_text_field($row->sku).'. ';
 }
 
 // Display categories for update
@@ -585,20 +522,19 @@ function cwscsShowEmails($emails) {
 // Documentation page
 //////////////////////////////////////////////////////////
 function cwscsShowDocsPage() {
-	$ct = '
+	?>
 	<h1>Documentation</h1>
 	<div class="twothirds">
-	<h2>On the Website</h2>
-	<p>Visitors to your website, as well as your staff, can submit items to your consignment store using the <strong>Add Item</strong> form. </p>
-	<ol>
-	<li>Create a page</li>
-	<li>Add shortcode <pre>[additemform]</pre></li>
-	<li>That is it!</li>
-	</ol>
-	<p>If a visitor submits an item, it is not added to the store right away. You will receive a notification email to review the item. You can review it under Submitted Items. Set Emails in Settings.</p>
-	<p>If an administrator submits an item, it is automatically added to the store. They will be required to enter a unique sku.</p>';
-	// backend
-	$ct .= '<h2>Backend</h2>
+		<h2>On the Website</h2>
+		<p>Visitors to your website, as well as your staff, can submit items to your consignment store using the <strong>Add Item</strong> form. </p>
+		<ol>
+		<li>Create a page</li>
+		<li>Add shortcode <pre>[additemform]</pre></li>
+		<li>That is it!</li>
+		</ol>
+		<p>If a visitor submits an item, it is not added to the store right away. You will receive a notification email to review the item. You can review it under Submitted Items. Set Emails in Settings.</p>
+		<p>If an administrator submits an item, it is automatically added to the store. They will be required to enter a unique sku.</p>
+		<h2>Backend</h2>
 		<h3>Submitted Items</h3>
 		<p>Displays items in the inventory that have been submitted and not approved yet.</p>
 		<p>Click Approve / Reject to show form</p>
@@ -615,11 +551,6 @@ function cwscsShowDocsPage() {
 			<li>Select whether to send an email to the seller. You have the option to modify the body of the email. </li>
 			<li>On save, deletes the item from the Inventory table and deletes associated images. </li>
 		</ol>
-		<!-- Removed 2021-08-04
-		<h3>Master Inventory</h3>
-		<p>Displays all items in the Inventory table that are submitted or approved. 
-		<p>There are no actions on this page, it is simply a list.</p>
-		-->
 		<h3>Manage Payouts</h3>
 		<p>You may record your payouts to sellers using this feature. </p>
 		<p>Displays approved items that have sold in the online store. </p>
@@ -631,11 +562,9 @@ function cwscsShowDocsPage() {
 		</ol>
 	</div>
 	<div class="onethird greybox">
-		<img src="'.plugin_dir_url( __FILE__ ) .'cwscs-consignment.jpg" alt="flowchart" />
+		<img src="<?php echo plugin_dir_url( __FILE__ ) .'cwscs-consignment.jpg'; ?>" alt="flowchart" />
 	</div>
 	<div class="clear"></div>';
-	// go full width for settings
-	$ct .= '
 	<h3>Settings</h3>
 	<p>You can modify 5 settings.</p>
 	<ol>
@@ -662,6 +591,5 @@ function cwscsShowDocsPage() {
 	<h4>Emails</h4>
 	<p>Enter the send from email or leave blank to use the WordPress default address.</p>
 	<p>Enter the send to email. This will be used to notify you of a new item submitted from the Add Item form from a non-Administrator. </p>
-	'; 
-	return $ct;
+	<?php
 }

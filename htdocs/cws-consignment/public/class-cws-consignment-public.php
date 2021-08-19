@@ -248,106 +248,125 @@ class cws_consignment_Public {
 				$customer = true;
 		} // END is logged in
 		
+		// get recaptcha settings - do here since need if submitted
+		$recaptcha = cwscsGetMyRecaptcha();
+			
 		// Was additem form submitted?
 		if (isset($_POST['additem'])) {
-			// if any files then upload and pass attachment ids to additem function 
-			// any image files?
-			// These files need to be included as dependencies when on the front end.
-			require_once( ABSPATH . 'wp-admin/includes/image.php' );
-			require_once( ABSPATH . 'wp-admin/includes/file.php' );
-			require_once( ABSPATH . 'wp-admin/includes/media.php' );
-			$attachments = array();
-			
-			for ($i=1; $i<=4; $i++) {
-				$imagename = "filename".$i;
-				if ($_POST[$imagename] != "") {
-					$file_type = wp_check_filetype( $_POST[$imagename], null );
-					$attachment_title  = str_replace($baseurl.'/'.date("Y/m").'/', "", $_POST[$imagename]); // just the file name
-					$file_path = str_replace($baseurl, $basedir, $_POST[$imagename]);
-					// The ID of the post this attachment is for.
-					$parent_post_id = 0;
-					$post_info = array(
-						'guid'           => $_POST[$imagename],
-						'post_mime_type' => $file_type['type'],
-						'post_title'     => $attachment_title,
-						'post_content'   => '',
-						'post_status'    => 'inherit',
-					);
-					
-					$attachment_id = wp_insert_attachment( $post_info, $file_path, $parent_post_id );
-					if (!isset( $attachment_id) || $attachment_id == 0) {
-						$msg .= '<p class="failmsg">There was an error adding image '.$attachment_id.'</p>';
-					} else {
-						$attachments[] = $attachment_id;
-						$attach_data = wp_generate_attachment_metadata( $attachment_id, $file_path );
-						$ok = wp_update_attachment_metadata( $attachment_id,  $attach_data );
-						if (!$ok)
-							$msg .= '<p class="failmsg">There was an error attaching the image '.$ok.'</p>';
-						// remove extra images
-						$msg .= cwscsRemoveExtraImages($attachment_id);
-					}
-				} // END there was an image
-			} // END loop on 4 images
-
-			if ($msg == "") {
-				if (isset($_POST['item_cat']) && $_POST['item_cat'] > 0)
+			// validate the form before doing anything
+			$ok = true;
+			if (isset($recaptcha) && isset($recaptcha['version']) && $recaptcha['version'] == "v2") {
+				if (!isset($_POST['g-recaptcha-response'])) {
+					$results = array('status'=>0, 'error'=>'Please check captcha checkbox. ');
+					$ok = false;
+				} else
+					$secret = $recaptcha['secret'];
+			} else
+				$secret = ""; // not in play
+			// check sku if admin
+			if ($admin && (!isset($_POST['sku']) || $_POST['sku'] == "")) {
+				$results = array('status'=>0, 'error'=>'Please enter a unique sku for this product. ');
+				$ok = false;
+			} else
+				$results = cwscsValidateAddItem($secret);
+				
+			if ($results['status'] == 0) {
+				$ct .= '<p class="failmsg">'.esc_html($results['error']).'</p>';
+			} else {
+				// any image files to handle?
+				require_once( ABSPATH . 'wp-admin/includes/image.php' );
+				require_once( ABSPATH . 'wp-admin/includes/file.php' );
+				require_once( ABSPATH . 'wp-admin/includes/media.php' );
+				$attachments = array();
+				
+				for ($i=1; $i<=4; $i++) {
+					$imagename = "filename".$i;
+					if ($_POST[$imagename] != "") {
+						$file_type = wp_check_filetype( $_POST[$imagename], null );
+						$attachment_title  = str_replace($baseurl.'/'.date("Y/m").'/', "", $_POST[$imagename]); // just the file name
+						$file_path = str_replace($baseurl, $basedir, $_POST[$imagename]);
+						// The ID of the post this attachment is for.
+						$parent_post_id = 0;
+						$post_info = array(
+							'guid'           => $_POST[$imagename],
+							'post_mime_type' => $file_type['type'],
+							'post_title'     => $attachment_title,
+							'post_content'   => '',
+							'post_status'    => 'inherit',
+						);
+						
+						$attachment_id = wp_insert_attachment( $post_info, $file_path, $parent_post_id );
+						if (!isset( $attachment_id) || $attachment_id == 0) {
+							$msg .= '<p class="failmsg">There was an error adding image '.$attachment_id.'</p>';
+						} else {
+							$attachments[] = $attachment_id;
+							$attach_data = wp_generate_attachment_metadata( $attachment_id, $file_path );
+							$ok = wp_update_attachment_metadata( $attachment_id,  $attach_data );
+							if (!$ok)
+								$msg .= '<p class="failmsg">There was an error attaching the image '.$ok.'</p>';
+							// remove extra images
+							$msg .= cwscsRemoveExtraImages($attachment_id);
+						}
+					} // END there was an image
+				} // END loop on 4 images
+				// if all still good then add to database
+				if ($msg == "" && $results['status'] == 1)
 					$insert_id = cwscsAddItem($_POST, $attachments);
 				else {
-					$msg .= '<p class="failmsg">Please select an item category. </p>';
+					if ($msg != "")
+						$msg .= '<p class="failmsg">'.esc_html($results['error']).'</p>';
 					$insert_id = -1;
 				}
-			} else
-				$insert_id = -1;		
-			if ($insert_id < 0) { // fail so show msg and show form
-				$msg .= '<p class="failmsg">There was an error saving the item. Please try again. </p>';
-			} else {
-				if (!$admin) {
-					$msg .= '<p class="successmsg">Your item has been submitted. Once your item has been reviewed, we will be in touch! You can scroll down to add another item. <br />Please don&rsquo;t refresh! That will resubmit your item. ';
-				} else {
-					$msg .= '<p class="successmsg">The item has been saved to the store. You can scroll down to add another item. Please don&rsquo;t refresh! That will resubmit your item. ';
-				}
-				$msg  .= '</p>';
-				if ($admin) {
-					// added to pending inventory successfully. Now add to woocommerce
-					$result = cwscsAddItemToWC($_POST, $attachments, "publish"); // will be the post id if successful
-				}
-			} // END check insert id
+						
+				if ($insert_id >= 0) { // fail so show msg and show form
+					if (!$admin) {
+						$msg .= '<p class="successmsg">Your item has been submitted. Once your item has been reviewed, we will be in touch! You can scroll down to add another item. <br />Please don&rsquo;t refresh! That will resubmit your item. ';
+					} else {
+						$msg .= '<p class="successmsg">The item has been saved to the store. You can scroll down to add another item. Please don&rsquo;t refresh! That will resubmit your item. ';
+					}
+					$msg  .= '</p>';
+					if ($admin) {
+						// added to pending inventory successfully. Now add to woocommerce
+						$result = cwscsAddItemToWC($_POST, $attachments, "publish"); // will be the post id if successful
+					}
+				} // END was added
 			
-			// If item was successfully added and the user is not an administrator then send the notification email to the email in settings
-			if (!$admin && $insert_id >= 0) {
-				$email_settings = cwscsGetMyEmails();
-				if (is_array($email_settings) && count($email_settings) == 2 && $email_settings[1] != "") {
-					$from = sanitize_email($email_settings[0]);
-					$to = sanitize_email($email_settings[1]);
-					$_POST['item_retail'] = intval($_POST['item_retail']);
-					$_POST['item_sale'] = intval($_POST['item_sale']);
-					
-					$subject = 'Someone has submitted an item in the store!';
-					$body = "Title: ".sanitize_text_field($_POST['item_title'])."\r\n"."Description: ".sanitize_textarea_field($_POST['item_desc'])."\r\nRetail Price: $".number_format($_POST['item_retail'])."\r\nStore Price: $".number_format($_POST['item_sale'])."\r\nSize: ".sanitize_text_field($_POST['item_size'])."\r\nColour: ".sanitize_text_field($_POST['item_colour'])."\r\nState of Item: ".sanitize_text_field($_POST['item_state'])."\r\nPhone: ".sanitize_text_field($_POST['phone'])."\r\nEmail: ".sanitize_email($_POST['email'])."\r\nAccepted Policy? ";
-					if (isset($_POST['policy_accepted']) && $_POST['policy_accepted'] == 1)
-						$body .= 'Yes';
-					elseif (isset($_POST['policy_accepted']) && $_POST['policy_accepted'] == 2)
-						$body .= 'Not Shown';
-					else
-						$body .= 'No';
-					$body .= "\r\n\r\nReview this and all submitted items in the CWS Consignment Store plugin \r\n";
-					$headers = array();
-					$headers[] = 'From: '.$from;
-					$sent = wp_mail($to, $subject, $body, $headers);
-				}
-			} // END send email
+				// If item was successfully added and the user is not an administrator then send the notification email to the email in settings
+				if (!$admin && $insert_id >= 0) {
+					$email_settings = cwscsGetMyEmails();
+					if (is_array($email_settings) && count($email_settings) == 2 && $email_settings[1] != "") {
+						$from = sanitize_email($email_settings[0]);
+						$to = sanitize_email($email_settings[1]);
+						$_POST['item_retail'] = intval($_POST['item_retail']);
+						$_POST['item_sale'] = intval($_POST['item_sale']);
+						
+						$subject = 'Someone has submitted an item in the store!';
+						$body = "Title: ".sanitize_text_field($_POST['item_title'])."\r\n"."Description: ".sanitize_textarea_field($_POST['item_desc'])."\r\nRetail Price: $".number_format($_POST['item_retail'])."\r\nStore Price: $".number_format($_POST['item_sale'])."\r\nSize: ".sanitize_text_field($_POST['item_size'])."\r\nColour: ".sanitize_text_field($_POST['item_colour'])."\r\nState of Item: ".sanitize_text_field($_POST['item_state'])."\r\nPhone: ".sanitize_text_field($_POST['phone'])."\r\nEmail: ".sanitize_email($_POST['email'])."\r\nAccepted Policy? ";
+						if (isset($_POST['policy_accepted']) && $_POST['policy_accepted'] == 1)
+							$body .= 'Yes';
+						elseif (isset($_POST['policy_accepted']) && $_POST['policy_accepted'] == 2)
+							$body .= 'Not Shown';
+						else
+							$body .= 'No';
+						$body .= "\r\n\r\nReview this and all submitted items in the CWS Consignment Store plugin \r\n";
+						$headers = array();
+						$headers[] = 'From: '.$from;
+						$sent = wp_mail($to, $subject, $body, $headers);
+					}
+				} // END send email
 
-			// Show message and button to add another item, maybe show summary of items?
-			$ct .= $msg; // must be formatted as good or bad
-			if ($insert_id >= 0) { // success and not staff so summary and form
-				$ct .= cwscsShowItemSummary(); // TO DO
-			}
+				// Show message and button to add another item, maybe show summary of items?
+				$ct .= $msg; // must be formatted as good or bad
+				if ($insert_id >= 0) { // success and not staff so summary and form
+					$ct .= cwscsShowItemSummary(); // TO DO
+				}
+			} // passed validation
 		} // END form was submitted
 
 		$cats = cwscsGetMyCategories();
 		$splits = cwscsGetMySplits();
 		$policy = cwscsGetMyPolicy();
-		$recaptcha = cwscsGetMyRecaptcha();
+		
 		unset($_POST); // prevent double submission
 		$ct .= '<br />
 		<div class="additemform">';
@@ -359,7 +378,7 @@ class cws_consignment_Public {
 					$ct .= '
 					<p id="p-sku">
 						<label for "sku">Enter Unique SKU for Item</label>
-						<input type="text" id="sku" name="sku" maxlength=8 placeholder="" value=""/> </p>';
+						<input type="text" id="sku" name="sku" maxlength=8 placeholder="" value="" required/> </p>';
 				}
 				$ct .= '
 				<p id="p-item_title">
@@ -384,7 +403,7 @@ class cws_consignment_Public {
 				$ct .= '
 				<p id="p-item_retail">
 					<label for "item_retail">Retail Price <span>How much does this item sell for in the store, brand new? </span></label>
-					<input type="text" id="item_retail" name="item_retail" maxlength=8 placeholder="$" />
+					<input type="text" id="item_retail" name="item_retail" maxlength=8 placeholder="$" required />
 				</p>
 				<p><a href="javascript:void(0);" data-divid="catprices" class="toggledivbyid showcatprices"><span class="dashicons dashicons-visibility"></span> View average sale prices in the store to help you set a price.</a></p>
 				<div id="catprices" class="hidden"></div>
@@ -392,7 +411,7 @@ class cws_consignment_Public {
 					<label for "item_sale">Sale Price 
 						<span>How much should it sell for in the store? Note on average you will receive 1/2 half of this amount if the item sells. </span>
 					</label>
-					<input type="text" id="item_sale" name="item_sale" maxlength=8 placeholder="$" />
+					<input type="text" id="item_sale" name="item_sale" maxlength=8 placeholder="$" required />
 				</p>
 				<p id="p-item_size">
 					<label for "item_size">Size if applicable</label>
@@ -448,7 +467,7 @@ class cws_consignment_Public {
 				else
 					$ct .= '<label for "phone">What Is Your Phone Number?</label>';
 				$ct .= '
-					<input type="text" id="phone" name="phone" maxlength=14 placeholder="" />
+					<input type="text" id="phone" name="phone" maxlength=14 placeholder="" required />
 				</p>
 				<p id="p-email">';
 				if ($admin)
@@ -461,7 +480,7 @@ class cws_consignment_Public {
 						$ct .= 'value="'.$email.'" ';
 					else
 						$ct .= 'value=""';
-					$ct .= '" />
+					$ct .= '" required />
 				</p>';
 				$split = 50; // default
 				if ($admin) {
@@ -470,7 +489,7 @@ class cws_consignment_Public {
 					$ct .= '
 					<p id="p-store_split">
 						<label for "store_split">Review Store Split</label>
-						<select id="store_split" name="store_split">';
+						<select id="store_split" name="store_split" required>';
 						foreach ($splits as $i => $s) {
 							$ct .= '
 							<option value='.$i;
@@ -483,7 +502,7 @@ class cws_consignment_Public {
 					</p>';
 				} else {
 					$ct .= '
-					<input type="hidden" id="sku" name="sku" value=0 />
+					<input type="hidden" id="sku" name="sku" value="" />
 					<input type="hidden" id="store_split" name="store_split" value=50 />';
 				}
 				if ($policy[0] == 1) {
@@ -507,13 +526,15 @@ class cws_consignment_Public {
 				}
 				// recaptcha? save a hidden field if so to help with processing
 				$isRc3 = false;
+				$disabled = "";
 				if (isset($recaptcha) && isset($recaptcha['version'])) {
 					if ($recaptcha['version'] == "v2") {
 						$ct .= '
 						<input type="hidden" name="rc2" id="rc2" value="'.$recaptcha['site_key'].'" >
 						<div class="clear">&nbsp;</div>
-						<div class="g-recaptcha" data-sitekey="'.$recaptcha['site_key'].'"></div>
+						<div class="g-recaptcha" data-sitekey="'.$recaptcha['site_key'].'"  data-callback="cc_enableSubmitBtn">></div>
       <br/>';
+	  					$disabled = 'disabled="disabled" ';
 					} 
 					/* no recaptcha v3 for now
 					elseif ($recaptcha['version'] == "v3") {
@@ -523,7 +544,9 @@ class cws_consignment_Public {
 				}
 				$ct .= '
 				<p id="cwscs_errormsg" class="failmsg hidden"></p>
-				<button type="submit" name="additem" class="single_add_to_cart_button button">Add Item</button>'; 
+				<button type="submit" name="additem" id="cc_additem" class="single_add_to_cart_button button" '.$disabled.'>Add Item</button>'; 
+				if ($disabled != "")
+					$ct .= '<p>The Add Item button is disabled until the form is complete and the "I am not a robot checkbox is clicked". </p>';
 			$ct .= '	
 			</form>		
 		</div> <!-- END .additemform -->';
@@ -686,7 +709,59 @@ function cwscsGetMyRecaptcha() {
 	}
 	return $results;
 }
-
+// validate the additem form including recaptcha
+function cwscsValidateAddItem($secret) {
+	$status = 1;
+	$error = "";
+	
+	$required = array('item_title'=>'Item Title', 'item_cat'=>'Category', 'item_retail'=>'Retail Price', 'item_sale'=>'Sale Price', 'seller_name'=>'Seller Name', 'phone'=>'Phone', 'email'=>'Email');
+	foreach ($required as $key => $n) {
+		if (!isset($_POST[$key]) || $_POST[$key] == "") {
+			$error .= 'Please enter '.$n.'. ';
+			$status = 0;
+		}
+	} // END loop on $required
+	// check email is an email
+	if (!is_email($_POST['email'])) {
+		$error .= 'Enter a valid email. ';
+		$status = 0;
+	}
+	if ($status == 1 && $secret != "") { // validate recaptcha if in play
+		if(!isset($_POST['g-recaptcha-response'])){
+			$error .= 'Please check the the reCaptcha checkbox. ';
+			$status = 0;
+		} else {
+			$captcha = $_POST['g-recaptcha-response'];
+			$ip = $_SERVER['REMOTE_ADDR'];
+			// post request to server
+			$url = 'https://www.google.com/recaptcha/api/siteverify?secret=' . urlencode($secret) .  '&response=' . urlencode($captcha);
+			//$response = file_get_contents($url);
+			$response = wp_remote_get($url);
+			$status = 0; // pessimist
+			if ( is_array( $response ) && !is_wp_error( $response ) ) {
+				$headers = $response['headers']; // array of http header lines
+				$body =  wp_remote_retrieve_body( $response ) ; // array of http header lines
+				$response_code =  wp_remote_retrieve_response_code( $response );
+				if ($response_code == 200) {
+					$responseBody = json_decode($body, true);
+					if ($responseBody['success'] === true) {
+						$status = 1;
+					} elseif ($responseBody['error-codes'] && $responseBody['error-codes'][0] == "timeout-or-duplicate") {
+						$error = "Your form has expired. Please fill in the form below and click Add Item. ";					
+					} else {
+						$error = 'You did not pass the anti-spam check and we cannot accept your submission. ;'; 
+					}
+				} else
+					$error = 'We could not contact Google to validate the form. Please try again later. ';
+			} elseif (!is_wp_error( $response )) {
+				$error = 'We could not contact Google to validate the form. Please try again later. ';
+			} else
+				$error = 'We could not contact Google to validate the form. Please try again later. ';
+        }
+	}
+	$results = array('status'=>$status, 'error'=>$error);
+	return $results;
+}
 // Add an item to the store - may require approval. Or if added by admin, goes directly into woocommerce
 function cwscsAddItem($post, $attachments) {
 	global $wpdb;
@@ -958,8 +1033,6 @@ function cwscs_uploadImg() {
 	} // no error
 	else {
 		$msg = 'Could not upload '.esc_html($_POST['tmpfilename']).', baseurl: '.esc_html($baseurl).', basedir: '.esc_html($basedir);
-		foreach ($_FILES as $n => $v)
-			$msg .= "$n: $v, ";
 	}
 	$results = array("status"=>$status, "message"=>$msg);
 	if ($status == 1) {

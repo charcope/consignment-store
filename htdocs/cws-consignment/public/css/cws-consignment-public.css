@@ -80,6 +80,9 @@ form.cwscs_form button {
 	transition: background-color .2s linear;
 	opacity:1;
 }
+form.cwscs_form button:disabled {
+	background-color:#CCC;
+}
 form.cwscs_form button:hover {
 	opacity:.7;
 } 

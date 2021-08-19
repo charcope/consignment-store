@@ -306,7 +306,7 @@ class cws_consignment_Admin {
 					 cwscsSavePayment();
 				} else { 
 					// fetch the item
-					$item = cwscsGetInventoryByID($_POST['item_id']);
+					$item = cwscsGetInventoryByID(intval($_POST['item_id']));
 					cwscsShowPaymentForm($current_url, $menu_slug, $item);
 					// show the form to save a payment, show any payment so far
 				} // END show form
@@ -355,17 +355,16 @@ class cws_consignment_Admin {
 		// check referrer
 		//check_ajax_referer( 'cwscs_doajax' );
 		// get post vars
-		$action = $_POST['action']; //get_cat_prices
 		if (isset($_POST['cwscs_key']))
-			$cwscs_key = $_POST['cwscs_key'];
+			$cwscs_key = sanitize_text_field($_POST['cwscs_key']);
 		else
 			$cwscs_key = "";
 		if (isset($_POST['cwscs_value'])) // may be blank
-			$cwscs_value = $_POST['cwscs_value'];
+			$cwscs_value = sanitize_text_field($_POST['cwscs_value']);
 		else
 			$cwscs_value = "";
 		if (isset($_POST['method'])) // may be blank
-			$method = $_POST['method'];
+			$method = sanitize_text_field($_POST['method']);
 		else {
 			$method = "";
 		}
@@ -582,7 +581,7 @@ function cwscsApproveItem() {
 				'reviewer_comments' => sanitize_text_field($_POST['reviewer_comments'])
 			), 
 			array(
-				'ID' => $_POST['item_id']
+				'ID' => intval($_POST['item_id'])
 			), 
 			array('%d', '%d', '%s') ,
 			array( '%d' ) 
@@ -694,11 +693,11 @@ function cwscsSavePayment() {
 		$msg .= '<p class="failmsg">Please enter a valid payment. </p>';	
 	} else {
 		$table_name = $prefix.'cwscs_inventory'; //custom table name
-        $id = $_POST['item_id'] * 1;
+        $id = intval($_POST['item_id']);
 		$paid = $_POST['paidpayment'] * 1;
 	    $result = $wpdb->query( $wpdb->prepare("UPDATE $table_name SET paid = ".$paid." WHERE ID =".$id));
 		if ($wpdb->last_error) {
-			$tmp = 'Could not save payment for item:  '.$_POST['item_id'].' Error is '.$wpdb->last_error.'. ';
+			$tmp = 'Could not save payment for item:  '.intval($_POST['item_id']).' Error is '.$wpdb->last_error.'. ';
 			$msg = '<p class="failmsg">'.$tmp.'</p>';
 			// logerror
 		} elseif (!$result) { // ok but no update

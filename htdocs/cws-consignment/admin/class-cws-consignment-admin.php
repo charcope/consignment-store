@@ -216,7 +216,7 @@ class cws_consignment_Admin {
 					$_POST['item_id'] = intval($_POST['item_id']);
 					if (isset($_POST['approved'])) {
 						if ($_POST['approved'] == 1) { // approved
-							if ($_POST['sku'] == "" || $_POST['sku'] <= 0) {
+							if ($_POST['sku'] == "") {
 								$msg .= '<p class="failmsg">You must enter a unique SKU.</p>';
 							} else {
 								// update item in inventory, save to WC, email the sender
@@ -236,13 +236,13 @@ class cws_consignment_Admin {
 							// show item details, all images and the approve/reject form
 							foreach ($results as $i => $row) {
 								if ($row->ID == intval($_POST['item_id'])) {
-									echo 'Showing details for '.esc_html($_POST['item_id']).'<br />';
+									echo 'Showing details for '.sanitize_text_field($_POST['item_id']).'<br />';
 									showApproveRejectForm($current_url, $menu_slug, $row);
 									$found = true;
 								}
 							}
 							if (!$found)
-								echo '<p class="failmsg">Could not find match for '.esc_html($_POST['item_id']).'</p>';
+								echo '<p class="failmsg">Could not find match for '.sanitize_text_field($_POST['item_id']).'</p>';
 						} else {
 							echo '<p>Error fetching inventory.</p>';
 						}
@@ -251,7 +251,7 @@ class cws_consignment_Admin {
 					$results = cwscsGetInventory(0); // get all submitted, not approved items
 					
 				if ($msg != "")
-					echo esc_html($msg);
+					echo $msg; // already escaped
 					
 				cwscsShowSubmittedPage($current_url, $menu_slug, $results); // will display form
 			} else {
@@ -296,7 +296,7 @@ class cws_consignment_Admin {
 			else
 				$search_kw = "";
 			if (isset($_POST['payment_type'])) {
-				$show = $_POST['payment_type'];
+				$show = sanitize_text_field($_POST['payment_type']); // radio button
 			} else
 				$show = "unpaid"; // default
 			// Did they click to Manage Payment or save payment?
@@ -466,7 +466,7 @@ function cwscsGetInventoryBySKU($sku) {
 	$prefix = $wpdb->prefix; 
 	$wpdb->show_errors();
 	$results = 1;
-	if (isset($sku) && $sku > 0) {
+	if (isset($sku) && $sku != "") {
 		$results = $wpdb->get_results( 'SELECT * FROM '.$prefix.'cwscs_inventory WHERE sku='.$sku); 
 	}
 	
@@ -530,11 +530,11 @@ function cwscsGetInventorySold($show="unpaid", $search_sku="", $search_kw="") {
 	
 	if (!is_object($items) && !is_array($items)) {
 		$tmp = 'Failed to find inventory. Error is '.$wpdb->last_error.'. Search criteria are '.$show.' store tag: '.$search_sku.', keywords: '.$search_kw.'. WHERE is '.$where;
-		$results = '<p class="failmsg">'.$tmp.'. </p>';
+		$results = array();
 		$url = get_site_url();
 		$test = cwscsLogError("admin", "class-cws-consignment-admin-php", "cwscsGetInventorySold", $url, $tmp);
 	} elseif (count($items) == 0)
-		$results = '<p class="warnmsg">No results found. </p>';
+		$results = array();
 	else {
 		// get woocommerce details
 		$ctr_r = 0;
@@ -561,7 +561,7 @@ function cwscsApproveItem() {
 	$_POST['item_id'] = intval($_POST['item_id']);
 	if (!isset($_POST) || !isset($_POST['item_id']) || $_POST['item_id'] <= 0) {
 		$msg .= '<p class="failmsg">There was an error approving this item. Please refresh and try again. </p>';
-	} elseif ($_POST['sku'] == "" || $_POST['sku'] <= 0) {
+	} elseif ($_POST['sku'] == "") {
 		$msg .= '<p class="failmsg">You must enter a unique SKU.</p>';
 	} else {
 		// check that this sku is not already in WC
@@ -570,7 +570,6 @@ function cwscsApproveItem() {
 			$msg .= '<p class="failmsg">That sku already exists in the store. Please enter a different one.</p>';
 		}
 	}
-	
 	
 	if ($msg == "") {
 		// APPROVED. Update inventory item as approved, with comments
@@ -581,13 +580,13 @@ function cwscsApproveItem() {
 				'reviewer_comments' => sanitize_text_field($_POST['reviewer_comments'])
 			), 
 			array(
-				'ID' => intval($_POST['item_id'])
+				'ID' => sanitize_text_field($_POST['item_id'])
 			), 
-			array('%d', '%d', '%s') ,
+			array('%d', '%s', '%s') ,
 			array( '%d' ) 
 		);
 		if (!$result) {
-			$tmp = 'Could not save item as approved:  '.sanitize_text_field($_POST['item_id']).' from '.sanitize_text_field($_POST['seller_name']).',, '.sanitize_email($_POST['email']).'. Error is '.$wpdb->last_error.'. ';
+			$tmp = 'Could not save item as approved:  '.sanitize_text_field($_POST['item_id']).' from '.sanitize_text_field($_POST['seller_name']).', '.sanitize_email($_POST['email']).'. Error is '.$wpdb->last_error.'. ';
 			$msg = '<p class="failmsg">'.$tmp.'. </p>';
 			// logerror
 		} // END bad result from update inventory
@@ -596,8 +595,8 @@ function cwscsApproveItem() {
 			// INSERT - updated inventory successfully. Now add to woocommerce
 			$post_id = cwscsAddItemToWCadmin($_POST, "publish"); // try in includes
 			if (!$post_id) {
-				$tmp = 'Could not save item to store:  '.sanitize_text_field($_POST['item_title']).' from '.sanitize_text_field($_POST['seller_name']).',, '.sanitize_email($_POST['email']).'. Error is '.$wpdb->last_error.'. ';
-				$msg = '<p class="failmsg">'.$tmp.'. Error has been logged. </p>';
+				$tmp = 'Could not save item to store. Error is '.$wpdb->last_error.'. ';
+				$msg = '<p class="failmsg">'.$tmp.'</p>';
 				// logerror
 			}
 		} // msg is blank
@@ -615,7 +614,7 @@ function cwscsApproveItem() {
 				$subject = get_option('siteurl').' has accepted your item!';
 				$test = wp_mail($to, $subject, $body, $headers);
 				if ($test)
-					$msg .= '<p class="successmsg">An email sent to '.sanitize_email($_POST['approved-email']).'. </p>';
+					$msg .= '<p class="successmsg">An email sent. </p>';
 				else
 					$msg .= '<p class="failmsg">Could not send email to '.sanitize_email($_POST['approved-email']).' from '.$from.', subject: '.$subject.', body: '.$body.'. </p>';
 			}
@@ -637,15 +636,15 @@ function cwscsRejectItem() {
 	if (!isset($_POST) || !isset($_POST['item_id']) || $_POST['item_id'] <= 0) {
 		$msg .= '<p class="failmsg">There was an error rejecting this item. Please refresh and try again. </p>';
 	} else {
-		$res = $wpdb->delete( $prefix.'cwscs_inventory', array( 'ID' => $_POST['item_id'] ) );
+		$res = $wpdb->delete( $prefix.'cwscs_inventory', array( 'ID' => sanitize_text_field($_POST['item_id'])));
 		if ($res == 1) { // deleted
 			// Remove images
 			for ($i=1; $i<=4; $i++) {
 				$_POST['item_image'.$i] = sanitize_text_field($_POST['item_image'.$i]);
 				if (isset($_POST['item_image'.$i]) && $_POST['item_image'.$i] > 0) {
-					$isImageDeleted = wp_delete_attachment($_POST['item_image'.$i], false ); // send to trash
+					$isImageDeleted = wp_delete_attachment(sanitize_text_field($_POST['item_image'.$i]), false ); // send to trash
 					if (!$isImageDeleted)
-						$msg .= 'Could not delete image '.$_POST['item_image'.$i].'. ';
+						$msg .= 'Could not delete image '.sanitize_text_field($_POST['item_image'.$i]).'. ';
 				}
 			}
 			if ($msg == "")
@@ -653,9 +652,8 @@ function cwscsRejectItem() {
 			else
 				$msg = '<p class="warnmsg">Successfully deleted item from submitted items. '.$msg.'</p>';	
 		} else { // error
-			$_POST['id'] = intval($_POST['id']);
 			$msg = '<p class="failmsg">Could not delete item from inventory. </p>';
-			$test = cwscsLogError("admin", "class-cws-consignment-admin-php", "cwscsRejectItem", $url, "Could not delete inventory ".$_POST['id'].'. Error: '.$wpdb->last_error);
+			$test = cwscsLogError("admin", "class-cws-consignment-admin-php", "cwscsRejectItem", $url, "Could not delete inventory ".sanitize_text_field($_POST['id']).'. Error: '.$wpdb->last_error);
 			$ok = false;
 		}
 	}
@@ -671,9 +669,9 @@ function cwscsRejectItem() {
 			$subject = 'Update from '.get_option('siteurl');
 			$test = wp_mail($to, $subject, $body, $headers);
 			if ($test)
-				$msg .= '<p class="successmsg">An email was sent to '.sanitize_email($_POST['rejected-email']).'. </p>';
+				$msg .= '<p class="successmsg">An email was sent. </p>';
 			else
-				$msg .= '<p class="failmsg">Could not send email to '.sanitize_email($_POST['rejected-email']).' from '.$from.', subject: '.$subject.', body: '.$body.'. </p>';
+				$msg .= '<p class="failmsg">Could not send email. </p>';
 		}
 	}
 	echo '<p class="successmsg">The item has been saved to the database as REJECTED. </p>';
@@ -694,10 +692,10 @@ function cwscsSavePayment() {
 	} else {
 		$table_name = $prefix.'cwscs_inventory'; //custom table name
         $id = intval($_POST['item_id']);
-		$paid = $_POST['paidpayment'] * 1;
+		$paid = sanitize_text_field($_POST['paidpayment']) * 1;
 	    $result = $wpdb->query( $wpdb->prepare("UPDATE $table_name SET paid = ".$paid." WHERE ID =".$id));
 		if ($wpdb->last_error) {
-			$tmp = 'Could not save payment for item:  '.intval($_POST['item_id']).' Error is '.$wpdb->last_error.'. ';
+			$tmp = 'Could not save payment for item. Error is '.$wpdb->last_error.'. ';
 			$msg = '<p class="failmsg">'.$tmp.'</p>';
 			// logerror
 		} elseif (!$result) { // ok but no update
@@ -706,7 +704,7 @@ function cwscsSavePayment() {
 		}
 	}// sku and item_id
 	if ($msg == "")
-		$msg = '<p class="successmsg">Payment of $'.number_format($_POST['paidpayment'],2).' for item has been saved successfully. </p>';	
+		$msg = '<p class="successmsg">Payment has been saved successfully. </p>';	
 	echo $msg;
 }
 
@@ -928,7 +926,7 @@ function cwscsGetWooBySkuAdmin($sku) {
 		}
 	} else {
 		$results['status'] = 0;
-		$results['msg'] = 'No item in store for sku '.$sku.' Error is '.$wpdb->last_error;
+		$results['msg'] = 'No item in store for sku '.esc_html($sku).' Error is '.$wpdb->last_error;
 	}
 	if (isset($post_id) && $post_id > 0) { // keep searching for info
 		$pms = $wpdb->get_results( 'SELECT meta_key, meta_value FROM '.$prefix.'postmeta WHERE post_id='.$post_id.' AND meta_key IN ("_stock_status", "total_sales","_price", "_regular_price")' ); 
@@ -948,7 +946,7 @@ function cwscsGetWooBySkuAdmin($sku) {
 			}
 		} else {
 			$results['status'] = 0;
-			$results['msg'] = 'No details in store for sku '.$sku.', post id: '.$post_id.' Error is '.$wpdb->last_error;
+			$results['msg'] = 'No details in store for sku. Error is '.$wpdb->last_error;
 		}
 	}
 	return $results;
@@ -958,21 +956,21 @@ function cwscsGetWooBySkuAdmin($sku) {
 function cwscsAddItemToWCadmin($post, $status) {
 	$msg = "";
 	// get the item from the inventory table and use that info to add to WC
-	$item = cwscsGetInventoryByID($post['item_id']);
+	$item = cwscsGetInventoryByID(sanitize_text_field($post['item_id']));
 	if (isset($item->item_desc)) {
-		$desc = $item->item_desc;
+		$desc = sanitize_text_field($item->item_desc);
 		if (isset($item->item_size) && $item->item_size != "") {
 			if (stristr("ize", $item->item_size))
-				$desc .= "\r\n".$item->item_size;
+				$desc .= "\r\n".sanitize_text_field($item->item_size);
 			else	
-				$desc .= "\r\nSize: ".$item->item_size;
+				$desc .= "\r\nSize: ".sanitize_text_field($item->item_size);
 		}
 		if (isset($item->item_colour) && $item->item_colour != "")
-			$desc .= "\r\n".$item->item_colour;	
+			$desc .= "\r\n".sanitize_text_field($item->item_colour);	
 		if (isset($item->item_state) && $item->item_state != "")
-			$desc .= "\r\nState of item: ".$item->item_state;			
+			$desc .= "\r\nState of item: ".sanitize_text_field($item->item_state);
 		$options = array(
-			'post_title' => $item->item_title,
+			'post_title' => sanitize_text_field($item->item_title),
 			"post_type" => "product", 
 			"post_status" => $status, 
 			'post_content' => $desc,
@@ -997,7 +995,7 @@ function cwscsAddItemToWCadmin($post, $status) {
 		update_post_meta( $post_id, '_length', '' );
 		update_post_meta( $post_id, '_width', '' );
 		update_post_meta( $post_id, '_height', '' );
-		update_post_meta( $post_id, '_sku', $post['sku'] );
+		update_post_meta( $post_id, '_sku', sanitize_text_field($post['sku']));
 		update_post_meta( $post_id, '_product_attributes', array() );
 		update_post_meta( $post_id, '_sale_price_dates_from', '' );
 		update_post_meta( $post_id, '_sale_price_dates_to', '' );
@@ -1010,19 +1008,19 @@ function cwscsAddItemToWCadmin($post, $status) {
 		// update_post_meta( $post_id, '_stock', $post['qty'] );
 		// add category to product
 		$product = wc_get_product($post_id);
-		$product->set_category_ids(array($item->item_cat));
+		$product->set_category_ids(array(intval($item->item_cat)));
 		$product->save();
 		
 		// add the feature image
 		$attachments = array();
 		if (isset($post['item_image1']) && $post['item_image1'] > 0)
-			$attachments[] = $post['item_image1'];
+			$attachments[] = sanitize_text_field($post['item_image1']);
 		if (isset($post['item_image2']) && $post['item_image2'] > 0)
-			$attachments[] = $post['item_image2'];
+			$attachments[] = sanitize_text_field($post['item_image2']);
 		if (isset($post['item_image3']) && $post['item_image3'] > 0)
-			$attachments[] = $post['item_image3'];
+			$attachments[] = sanitize_text_field($post['item_image3']);
 		if (isset($post['item_image4']) && $post['item_image4'] > 0)
-			$attachments[] = $post['item_image4'];			
+			$attachments[] = sanitize_text_field($post['item_image4']);
 		if (isset($attachments[0]) && $attachments[0] > 0)
 			set_post_thumbnail( $post_id, $attachments[0] );
 		// now add to the product gallery if more than 1 image
@@ -1041,8 +1039,7 @@ function cwscsAddItemToWCadmin($post, $status) {
 			if (isset($attach_id_str) && $attach_id_str != "") {
 				$meta_key = update_post_meta($post_id, '_product_image_gallery', $attach_id_str);
 				if (!$meta_key)
-					$msg =  '<p c>Could not add '.$attach_id_str.'</p>';
-					// log error
+					$msg =  '<p>Could not add update post with images.</p>';
 			}
 		} // more than 1 image to add
 		

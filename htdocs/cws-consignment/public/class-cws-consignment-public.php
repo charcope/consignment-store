@@ -283,12 +283,13 @@ class cws_consignment_Public {
 					$imagename = "filename".$i;
 					if ($_POST[$imagename] != "") {
 						$file_type = wp_check_filetype( $_POST[$imagename], null );
-						$attachment_title  = str_replace($baseurl.'/'.date("Y/m").'/', "", $_POST[$imagename]); // just the file name
-						$file_path = str_replace($baseurl, $basedir, $_POST[$imagename]);
+						$fn = sanitize_text_field($_POST[$imagename]);
+						$attachment_title  = str_replace($baseurl.'/'.date("Y/m").'/', "", $fn); // just the file name
+						$file_path = str_replace($baseurl, $basedir, $fn);
 						// The ID of the post this attachment is for.
 						$parent_post_id = 0;
 						$post_info = array(
-							'guid'           => $_POST[$imagename],
+							'guid'           => $fn,
 							'post_mime_type' => $file_type['type'],
 							'post_title'     => $attachment_title,
 							'post_content'   => '',
@@ -337,11 +338,11 @@ class cws_consignment_Public {
 					if (is_array($email_settings) && count($email_settings) == 2 && $email_settings[1] != "") {
 						$from = sanitize_email($email_settings[0]);
 						$to = sanitize_email($email_settings[1]);
-						$_POST['item_retail'] = intval($_POST['item_retail']);
-						$_POST['item_sale'] = intval($_POST['item_sale']);
+						$item_retail = sanitize_text_field($_POST['item_retail']);
+						$item_sale = sanitize_text_field($_POST['item_sale']);
 						
 						$subject = 'Someone has submitted an item in the store!';
-						$body = "Title: ".sanitize_text_field($_POST['item_title'])."\r\n"."Description: ".sanitize_textarea_field($_POST['item_desc'])."\r\nRetail Price: $".number_format($_POST['item_retail'])."\r\nStore Price: $".number_format($_POST['item_sale'])."\r\nSize: ".sanitize_text_field($_POST['item_size'])."\r\nColour: ".sanitize_text_field($_POST['item_colour'])."\r\nState of Item: ".sanitize_text_field($_POST['item_state'])."\r\nPhone: ".sanitize_text_field($_POST['phone'])."\r\nEmail: ".sanitize_email($_POST['email'])."\r\nAccepted Policy? ";
+						$body = "Title: ".sanitize_text_field($_POST['item_title'])."\r\n"."Description: ".sanitize_textarea_field($_POST['item_desc'])."\r\nRetail Price: $".number_format($item_retail,2)."\r\nStore Price: $".number_format($item_sale,2)."\r\nSize: ".sanitize_text_field($_POST['item_size'])."\r\nColour: ".sanitize_text_field($_POST['item_colour'])."\r\nState of Item: ".sanitize_text_field($_POST['item_state'])."\r\nPhone: ".sanitize_text_field($_POST['phone'])."\r\nEmail: ".sanitize_email($_POST['email'])."\r\nAccepted Policy? ";
 						if (isset($_POST['policy_accepted']) && $_POST['policy_accepted'] == 1)
 							$body .= 'Yes';
 						elseif (isset($_POST['policy_accepted']) && $_POST['policy_accepted'] == 2)
@@ -776,7 +777,7 @@ function cwscsAddItem($post, $attachments) {
 		if (count($attachments) > 3)
 			$att4 = $attachments[3];
 	}
-	if ($post['sku'] != "" && $post['sku'] > 0)
+	if ($post['sku'] != "")
 		$approved = 1;
 	else
 		$approved = 0;
@@ -797,7 +798,7 @@ function cwscsAddItem($post, $attachments) {
 				'phone' => sanitize_text_field($post['phone']), 
 				'email' => sanitize_email($post['email']), 
 				'policy_accepted' => $post['policy_accepted'],
-				'sku' => $post['sku'],
+				'sku' => sanitize_text_field($post['sku']),
 				'store_split' => $post['store_split'],
 				'approved' => $approved,
 				'item_image1' => $att1,
@@ -807,7 +808,7 @@ function cwscsAddItem($post, $attachments) {
 				'date_added'=>current_time("Y-m-d")
 			), 
 			array( 
-				'%s', '%d', '%s', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%d', '%s'
+				'%s', '%d', '%s', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%d', '%d', '%d', '%d', '%d', '%d', '%s'
 			) 
 	);
 	$wpdb->print_error();
@@ -888,7 +889,7 @@ function cwscsAddItemToWC($post, $attachments, $status) {
 		update_post_meta( $post_id, '_length', '' );
 		update_post_meta( $post_id, '_width', '' );
 		update_post_meta( $post_id, '_height', '' );
-		update_post_meta( $post_id, '_sku', $post['sku'] );
+		update_post_meta( $post_id, '_sku', sanitize_text_field($post['sku']) );
 		update_post_meta( $post_id, '_product_attributes', array() );
 		update_post_meta( $post_id, '_sale_price_dates_from', '' );
 		update_post_meta( $post_id, '_sale_price_dates_to', '' );
@@ -967,12 +968,14 @@ function cwscsGetWooBySku($sku) {
 //////////////////////////////////
 // Display the item back
 function cwscsShowItemSummary() {
+	$item_retail = sanitize_text_field($_POST['item_retail']);
+	$item_sale = sanitize_text_field($_POST['item_sale']);
 	$ct = '
 		<p>
 		<strong>'.sanitize_text_field($_POST['item_title']).'</strong><br />
 		<strong>Description: </strong>'.sanitize_textarea_field($_POST['item_desc']).'<br />
-		<strong>Retail Price: </strong>$'.number_format($_POST['item_retail']).'<br />
-		<strong>Store Price: </strong>$'.number_format($_POST['item_sale']).'<br />
+		<strong>Retail Price: </strong>$'.number_format($item_retail,2).'<br />
+		<strong>Store Price: </strong>$'.number_format($item_sale,2).'<br />
 		<strong>Size: </strong>'.sanitize_text_field($_POST['item_size']).'<br />
 		<strong>Colour: </strong>'.sanitize_text_field($_POST['item_colour']).'<br />
 		<strong>State of Item: </strong>'.sanitize_text_field($_POST['item_state']).'<br />
@@ -1032,7 +1035,7 @@ function cwscs_uploadImg() {
 		} // END name is not blank
 	} // no error
 	else {
-		$msg = 'Could not upload '.esc_html($_POST['tmpfilename']).', baseurl: '.esc_html($baseurl).', basedir: '.esc_html($basedir);
+		$msg = 'Could not upload image file.';
 	}
 	$results = array("status"=>$status, "message"=>$msg);
 	if ($status == 1) {

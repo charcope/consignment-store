@@ -48,7 +48,7 @@ function showApproveRejectForm($current_url, $menu_slug, $row) {
 	$_POST['item_id'] = intval($_POST['item_id']);
 	echo
 	'<form action="'.$current_url.'?page='.$menu_slug.'" method="post" class="cwsreview_item">
-		<input type="hidden" name="item_id" value="'.$_POST['item_id'].'" />
+		<input type="hidden" name="item_id" value="'.sanitize_text_field($_POST['item_id']).'" />
 		<input type="hidden" name="item_image1" value="'.sanitize_text_field($row->item_image1).'" />
 		<input type="hidden" name="item_image2" value="'.sanitize_text_field($row->item_image2).'" />
 		<input type="hidden" name="item_image3" value="'.sanitize_text_field($row->item_image3).'" />
@@ -61,7 +61,7 @@ function showApproveRejectForm($current_url, $menu_slug, $row) {
 			<label for "store_split">Review Store Split</label>
 			<select id="store_split" name="store_split">';
 			foreach ($splits as $i => $s) {
-				echo '<option value='.$i;
+				echo '<option value='.esc_html($i);
 				if ($row->store_split == $i)
 					echo ' selected="selected" ';
 				echo '>'.esc_html($s).'</option>';
@@ -72,7 +72,7 @@ function showApproveRejectForm($current_url, $menu_slug, $row) {
 		<p id="p-sku" class="cwshidden hideifrejected">
 			<label for "sku">Enter SKU</label>
 			<input type="text" id="sku" name="sku" maxlength=8 value="';
-			if ($row->sku > 0)
+			if ($row->sku != "")
 				echo esc_html($row->sku);
 			echo '" /> 
 		</p>

@@ -48,11 +48,11 @@ function showApproveRejectForm($current_url, $menu_slug, $row) {
 	$_POST['item_id'] = intval($_POST['item_id']);
 	echo
 	'<form action="'.$current_url.'?page='.$menu_slug.'" method="post" class="cwsreview_item">
-		<input type="hidden" name="item_id" value="'.sanitize_text_field($_POST['item_id']).'" />
-		<input type="hidden" name="item_image1" value="'.sanitize_text_field($row->item_image1).'" />
-		<input type="hidden" name="item_image2" value="'.sanitize_text_field($row->item_image2).'" />
-		<input type="hidden" name="item_image3" value="'.sanitize_text_field($row->item_image3).'" />
-		<input type="hidden" name="item_image4" value="'.sanitize_text_field($row->item_image4).'" />
+		<input type="hidden" name="item_id" value="'.esc_html($_POST['item_id']).'" />
+		<input type="hidden" name="item_image1" value="'.esc_html($row->item_image1).'" />
+		<input type="hidden" name="item_image2" value="'.esc_html($row->item_image2).'" />
+		<input type="hidden" name="item_image3" value="'.esc_html($row->item_image3).'" />
+		<input type="hidden" name="item_image4" value="'.esc_html($row->item_image4).'" />
 		<h3>Your Review</h3>';
 		// show store split
 		
@@ -391,7 +391,7 @@ function cwscsShowItemDeets($row, $show_more=false, $show_pics=true) {
 		} // END show more
 	} // END show pics
 	$ct .= '<br />
-	<strong>'.sanitize_text_field($row->item_title).'</strong><br />';
+	<strong>'.esc_html($row->item_title).'</strong><br />';
 	if ($row->item_desc != "")
 		$ct .=  '<strong>Description: </strong>'.sanitize_textarea_field($row->item_desc).'. ';
 	if ($row->item_retail > 0)
@@ -399,13 +399,13 @@ function cwscsShowItemDeets($row, $show_more=false, $show_pics=true) {
 	if ($row->item_sale > 0)
 		$ct .=  '<strong>Store Price: </strong>$'.number_format($row->item_sale).'. ';
 	if ($row->item_size != "")
-		$ct .=  '<strong>Size: </strong>'.sanitize_text_field($row->item_size).'. ';
+		$ct .=  '<strong>Size: </strong>'.esc_html($row->item_size).'. ';
 	if ($row->item_colour != "")
-		$ct .=  '<strong>Colour: </strong>'.sanitize_text_field($row->item_colour).'. ';
+		$ct .=  '<strong>Colour: </strong>'.esc_html($row->item_colour).'. ';
 	if ($row->item_state != "")
-		$ct .=  '<strong>State of Item: </strong>'.sanitize_text_field($row->item_state).'. ';
+		$ct .=  '<strong>State of Item: </strong>'.esc_html($row->item_state).'. ';
 	if ($row->sku != "")
-		$ct .=  '<strong>SKU: </strong>'.sanitize_text_field($row->sku).'. ';
+		$ct .=  '<strong>SKU: </strong>'.esc_html($row->sku).'. ';
 	return $ct;	
 }
 

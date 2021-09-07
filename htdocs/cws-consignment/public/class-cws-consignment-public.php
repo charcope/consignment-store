@@ -356,10 +356,9 @@ class cws_consignment_Public {
 					}
 				} // END send email
 
-				// Show message and button to add another item, maybe show summary of items?
-				$ct .= $msg; // must be formatted as good or bad
-				if ($insert_id >= 0) { // success and not staff so summary and form
-					$ct .= cwscsShowItemSummary(); // TO DO
+				$ct .= $msg; // already formatted
+				if ($insert_id >= 0) {
+					$ct .= cwscsShowItemSummary();
 				}
 			} // passed validation
 		} // END form was submitted
@@ -391,7 +390,7 @@ class cws_consignment_Public {
 					<select id="item_cat" name="item_cat" required>
 						<option value="">Choose &hellip;</option>';
 						foreach ($cats as $i => $obj) {
-							$ct .= '<option value="'.$obj->term_id.'">'.$obj->name.'</option>';
+							$ct .= '<option value="'.esc_html($obj->term_id).'">'.esc_html($obj->name).'</option>';
 						}
 						$ct .= '
 					</select>
@@ -493,10 +492,10 @@ class cws_consignment_Public {
 						<select id="store_split" name="store_split" required>';
 						foreach ($splits as $i => $s) {
 							$ct .= '
-							<option value='.$i;
+							<option value='.esc_html($i);
 							if ($split == $i)
 								$ct .= ' selected="selected" ';
-							$ct .= '>'.$s.'</option>';
+							$ct .= '>'.esc_html($s).'</option>';
 						}
 						$ct .= '
 						</select>
@@ -509,7 +508,7 @@ class cws_consignment_Public {
 				if ($policy[0] == 1) {
 					$ct .= '
 					<p><a href="javascript:void(0);" data-divid="policy" class="toggledivbyid"><span class="dashicons dashicons-visibility"></span> Click to show or hide the policy on selling items in the our consignment store.</a></p>
-					<div id="policy" class="hidden">'.$policy[1].'</div>
+					<div id="policy" class="hidden">'.esc_html($policy[1]).'</div>
 					<p id="p-policy_accepted">
 						<label for "policy_accepted">Please indicate your acceptance of the store policy. </label>
 						<label class="radio" for="policy_accepted">

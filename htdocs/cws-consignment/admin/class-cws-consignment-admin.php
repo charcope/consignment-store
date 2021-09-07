@@ -111,7 +111,7 @@ class cws_consignment_Admin {
 					'system' => sanitize_text_field($system), 
 					'file' => sanitize_text_field($file),
 					'fcn' => sanitize_text_field($fcn),
-					'url' => sanitize_text_field($url),
+					'url' => esc_url_raw($url),
 					'msg' => sanitize_text_field($msg)
 				), 
 				array('%s', '%s', '%s', '%s', '%s') 
@@ -189,7 +189,6 @@ class cws_consignment_Admin {
      * Content of appointments admin page
      */
     public function top_level_consignment() {
-		$msg = "";
 		if ( is_user_logged_in() ) {
 			echo '<h1>CWS Consignment Store</h1>
 			<h2>Review Submitted Items</h2>';
@@ -213,11 +212,11 @@ class cws_consignment_Admin {
 				// Item selected?
 				if (isset($_POST['item_id'])) {
 					// was it an approve/reject?
-					$_POST['item_id'] = intval($_POST['item_id']);
+					$_POST['item_id'] = sanitize_text_field($_POST['item_id']);
 					if (isset($_POST['approved'])) {
 						if ($_POST['approved'] == 1) { // approved
 							if ($_POST['sku'] == "") {
-								$msg .= '<p class="failmsg">You must enter a unique SKU.</p>';
+								echo '<p class="failmsg">You must enter a unique SKU.</p>';
 							} else {
 								// update item in inventory, save to WC, email the sender
 								cwscsApproveItem(); 
@@ -231,27 +230,24 @@ class cws_consignment_Admin {
 					else {
 						$found = false;
 						$results = cwscsGetInventory(0); // get all submitted, not approved items
-						
+						$clean_item_id = sanitize_text_field($_POST['item_id']);
 						if (is_array($results) || is_object($results)) { 
 							// show item details, all images and the approve/reject form
 							foreach ($results as $i => $row) {
-								if ($row->ID == intval($_POST['item_id'])) {
-									echo 'Showing details for '.sanitize_text_field($_POST['item_id']).'<br />';
+								if ($row->ID == intval($clean_item_id)) {
+									echo 'Showing details for '.esc_html($clean_item_id).'<br />';
 									showApproveRejectForm($current_url, $menu_slug, $row);
 									$found = true;
 								}
 							}
 							if (!$found)
-								echo '<p class="failmsg">Could not find match for '.sanitize_text_field($_POST['item_id']).'</p>';
+								echo '<p class="failmsg">Could not find match for '.esc_html($clean_item_id).'</p>';
 						} else {
 							echo '<p>Error fetching inventory.</p>';
 						}
 					}
 				} else
 					$results = cwscsGetInventory(0); // get all submitted, not approved items
-					
-				if ($msg != "")
-					echo $msg; // already escaped
 					
 				cwscsShowSubmittedPage($current_url, $menu_slug, $results); // will display form
 			} else {
@@ -260,17 +256,9 @@ class cws_consignment_Admin {
 		} // END is logged in
 		else
 			echo '<p class="failmsg">You are not authorized to be here. </p>';
-		/*
-        $settings = $this->options->get_options();
-        $settings['date_format'] = $this->datetime->convert_to_moment_format(get_option('date_format', 'F j, Y'));
-        wp_localize_script('ea-appointments', 'ea_settings', $settings);
-        wp_localize_script('ea-appointments', 'ea_app_status', $this->logic->getStatus());
-        wp_localize_script('ea-appointments', 'ea_connections', $this->models->get_connections_combinations());
-		*/
     }
 
 	public function cwscspayments_page() {
-		$msg = "";
 		if ( is_user_logged_in() ) {
 			echo '<h1>Payments to Sellers</h1>
 			<p>Below is the list of items that were submitted to the consignment store and have now been sold. Record payments to the sellers here.</p>';
@@ -306,7 +294,7 @@ class cws_consignment_Admin {
 					 cwscsSavePayment();
 				} else { 
 					// fetch the item
-					$item = cwscsGetInventoryByID(intval($_POST['item_id']));
+					$item = cwscsGetInventoryByID(sanitize_text_field($_POST['item_id']));
 					cwscsShowPaymentForm($current_url, $menu_slug, $item);
 					// show the form to save a payment, show any payment so far
 				} // END show form
@@ -322,7 +310,6 @@ class cws_consignment_Admin {
 	}
 	// SETTINGS!
 	public function cwscstop_settings_menu() {
-		$msg = "";
 		if ( is_user_logged_in() ) {
 			echo '<h1>Settings</h1>';
 
@@ -448,6 +435,7 @@ function cwscsGetInventoryByID($id) {
 	
 	$results = 1;
 	if (isset($id) && $id > 0) {
+		$id = sanitize_text_field($id);
 		$results = $wpdb->get_results( 'SELECT * FROM '.$prefix.'cwscs_inventory WHERE ID='.$id ); 
 	}
 	if (!is_object($results) && !is_array($results)) {
@@ -467,6 +455,7 @@ function cwscsGetInventoryBySKU($sku) {
 	$wpdb->show_errors();
 	$results = 1;
 	if (isset($sku) && $sku != "") {
+		$sku = sanitize_text_field($sku);
 		$results = $wpdb->get_results( 'SELECT * FROM '.$prefix.'cwscs_inventory WHERE sku='.$sku); 
 	}
 	
@@ -488,6 +477,7 @@ function cwscsGetInventoryByKw($search_kw) {
 	$wpdb->show_errors();
 	$results = array();
 	if ($search_kw != "") {
+		$search_kw = sanitize_text_field($search_kw);
 		$search_kw = str_replace(' ', '%', $search_kw);
 		$search_kw = '%'.$search_kw.'%';
 	}
@@ -518,9 +508,11 @@ function cwscsGetInventorySold($show="unpaid", $search_sku="", $search_kw="") {
 		$conn = ' AND ';
 	}
 	if (isset($search_sku) && $search_sku > 0) {
+		$search_sku = sanitize_text_field($search_sku);
 		$where .= $conn.' sku='.$search_sku;
 		$conn = ' AND ';
 	} elseif (isset($search_kw) && $search_kw != "") {
+		$search_kw = sanitize_text_field($search_kw);
 		$search_kw = str_replace(' ', '%', $search_kw);
 		$search_kw = '%'.$search_kw.'%';
 		$where .= $conn.' (item_title LIKE "'.$search_kw.'" OR item_desc LIKE "'.$search_kw.'" OR item_size LIKE "'.$search_kw.'" OR item_colour LIKE "'.$search_kw.'" OR item_state LIKE "'.$search_kw.'")';
@@ -691,7 +683,7 @@ function cwscsSavePayment() {
 		$msg .= '<p class="failmsg">Please enter a valid payment. </p>';	
 	} else {
 		$table_name = $prefix.'cwscs_inventory'; //custom table name
-        $id = intval($_POST['item_id']);
+        $id = sanitize_text_field($_POST['item_id']);
 		$paid = sanitize_text_field($_POST['paidpayment']) * 1;
 	    $result = $wpdb->query( $wpdb->prepare("UPDATE $table_name SET paid = ".$paid." WHERE ID =".$id));
 		if ($wpdb->last_error) {
@@ -720,6 +712,7 @@ function cwscsGetSettingByKey($key) {
 	if ($key == "") {
 		$results = array("status"=>0, "msg"=>'Please enter a valid key for the settings table.');
 	} else {
+		$key = sanitize_text_field($key);
 		$values = $wpdb->get_results( 'SELECT cwscs_value FROM '.$prefix.$table.' WHERE cwscs_key="'.$key.'"'); 
 		
 		if (!is_object($values) && !is_array($values)) {
@@ -918,6 +911,7 @@ function cwscsGetWooBySkuAdmin($sku) {
 	$results = array();
 	$wpdb->show_errors();
 	// get post id
+	$sku = sanitize_text_field($sku);
 	$pms = $wpdb->get_results( 'SELECT post_id FROM '.$prefix.'postmeta WHERE meta_key="_sku" AND meta_value="'.$sku.'"' ); 
 	$post_id = 0;
 	if (is_object($pms) || is_array($pms)) {
@@ -1038,8 +1032,6 @@ function cwscsAddItemToWCadmin($post, $status) {
 			}
 			if (isset($attach_id_str) && $attach_id_str != "") {
 				$meta_key = update_post_meta($post_id, '_product_image_gallery', $attach_id_str);
-				if (!$meta_key)
-					$msg =  '<p>Could not add update post with images.</p>';
 			}
 		} // more than 1 image to add
 		

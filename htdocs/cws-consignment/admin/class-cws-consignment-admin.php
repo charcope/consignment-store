@@ -548,22 +548,25 @@ function cwscsApproveItem() {
 	global $wpdb;
 	$prefix = $wpdb->prefix; 
 	$wpdb->show_errors();
-	$msg = "";
+	$ok = true;
 	$url = get_site_url();
 	$_POST['item_id'] = intval($_POST['item_id']);
 	if (!isset($_POST) || !isset($_POST['item_id']) || $_POST['item_id'] <= 0) {
-		$msg .= '<p class="failmsg">There was an error approving this item. Please refresh and try again. </p>';
+		echo '<p class="failmsg">There was an error approving this item. Please refresh and try again. </p>';
+		$ok = false;
 	} elseif ($_POST['sku'] == "") {
-		$msg .= '<p class="failmsg">You must enter a unique SKU.</p>';
+		echo '<p class="failmsg">You must enter a unique SKU.</p>';
+		$ok = false;
 	} else {
 		// check that this sku is not already in WC
 		$woo = cwscsGetWooBySkuAdmin(sanitize_text_field($_POST['sku']));
 		if (isset($woo['status']) && $woo['status'] == 1) {
-			$msg .= '<p class="failmsg">That sku already exists in the store. Please enter a different one.</p>';
+			echo '<p class="failmsg">That sku already exists in the store. Please enter a different one.</p>';
+			$ok = false;
 		}
 	}
 	
-	if ($msg == "") {
+	if ($ok) {
 		// APPROVED. Update inventory item as approved, with comments
 		$result = $wpdb->update ( $prefix.'cwscs_inventory',
 			array(  
@@ -578,23 +581,21 @@ function cwscsApproveItem() {
 			array( '%d' ) 
 		);
 		if (!$result) {
-			$tmp = 'Could not save item as approved:  '.sanitize_text_field($_POST['item_id']).' from '.sanitize_text_field($_POST['seller_name']).', '.sanitize_email($_POST['email']).'. Error is '.$wpdb->last_error.'. ';
-			$msg = '<p class="failmsg">'.$tmp.'. </p>';
-			// logerror
+			$tmp = '<p class="failmsg">Could not save item as approved:  '.sanitize_text_field($_POST['item_id']).' from '.sanitize_text_field($_POST['seller_name']).', '.sanitize_email($_POST['email']).'. Error is '.$wpdb->last_error.'. </p>';
+			$ok = false;
 		} // END bad result from update inventory
-		if ($msg == "") {
+		if ($ok) {
 			$action = "insert";
 			// INSERT - updated inventory successfully. Now add to woocommerce
 			$post_id = cwscsAddItemToWCadmin($_POST, "publish"); // try in includes
 			if (!$post_id) {
-				$tmp = 'Could not save item to store. Error is '.$wpdb->last_error.'. ';
-				$msg = '<p class="failmsg">'.$tmp.'</p>';
-				// logerror
+				$tmp = '<p class="failmsg">Could not save item to store. Error is '.$wpdb->last_error.'. </p>';
+				$ok = false;
 			}
 		} // msg is blank
 	}// sku and item_id
-	if ($msg == "") {
-		$msg = '<p class="successmsg">Item approved and saved to store successfully. </p>';	
+	if ($ok) {
+		echo '<p class="successmsg">Item approved and saved to store successfully. </p>';	
 		// send email to Seller if checked
 		if (isset($_POST['approved_sendemail']) && $_POST['approved_sendemail'] == "Yes" && isset($_POST['approved-email']) && $_POST['approved-email'] != "" && isset($_POST['approved-body']) && $_POST['approved-body'] != "") {
 			$emails = cwscsGetMyEmails();
@@ -606,13 +607,12 @@ function cwscsApproveItem() {
 				$subject = get_option('siteurl').' has accepted your item!';
 				$test = wp_mail($to, $subject, $body, $headers);
 				if ($test)
-					$msg .= '<p class="successmsg">An email sent. </p>';
+					echo '<p class="successmsg">An email sent. </p>';
 				else
-					$msg .= '<p class="failmsg">Could not send email to '.sanitize_email($_POST['approved-email']).' from '.$from.', subject: '.$subject.', body: '.$body.'. </p>';
+					echo '<p class="failmsg">Could not send email to '.sanitize_email($_POST['approved-email']).' from '.$from.', subject: '.$subject.', body: '.$body.'. </p>';
 			}
 		}
 	} // END no errors after add to woo, update to inventory
-	echo $msg;
 }
 
 // Administrator rejected a submitted item
@@ -620,13 +620,13 @@ function cwscsRejectItem() {
 	global $wpdb;
 	$prefix = $wpdb->prefix; 
 	$wpdb->show_errors();
-	$msg = "";
 	$ok = true;
 	$url = get_site_url();
 	$headers="From: no-reply@".$url."\r\n";
 	$_POST['item_id'] = intval($_POST['item_id']);
 	if (!isset($_POST) || !isset($_POST['item_id']) || $_POST['item_id'] <= 0) {
-		$msg .= '<p class="failmsg">There was an error rejecting this item. Please refresh and try again. </p>';
+		echo '<p class="failmsg">There was an error rejecting this item. Please refresh and try again. </p>';
+		$ok = false;
 	} else {
 		$res = $wpdb->delete( $prefix.'cwscs_inventory', array( 'ID' => sanitize_text_field($_POST['item_id'])));
 		if ($res == 1) { // deleted
@@ -635,16 +635,16 @@ function cwscsRejectItem() {
 				$_POST['item_image'.$i] = sanitize_text_field($_POST['item_image'.$i]);
 				if (isset($_POST['item_image'.$i]) && $_POST['item_image'.$i] > 0) {
 					$isImageDeleted = wp_delete_attachment(sanitize_text_field($_POST['item_image'.$i]), false ); // send to trash
-					if (!$isImageDeleted)
-						$msg .= 'Could not delete image '.sanitize_text_field($_POST['item_image'.$i]).'. ';
+					if (!$isImageDeleted) {
+						echo 'Could not delete image '.sanitize_text_field($_POST['item_image'.$i]).'. ';
+						$ok = false;
+					}
 				}
 			}
-			if ($msg == "")
-				$msg = '<p class="successmsg">Successfully deleted item from submitted items. </p>';
-			else
-				$msg = '<p class="warnmsg">Successfully deleted item from submitted items. '.$msg.'</p>';	
+			if ($ok)
+				echo '<p class="successmsg">Successfully deleted item from submitted items. </p>';	
 		} else { // error
-			$msg = '<p class="failmsg">Could not delete item from inventory. </p>';
+			echo '<p class="failmsg">Could not delete item from inventory. </p>';
 			$test = cwscsLogError("admin", "class-cws-consignment-admin-php", "cwscsRejectItem", $url, "Could not delete inventory ".sanitize_text_field($_POST['id']).'. Error: '.$wpdb->last_error);
 			$ok = false;
 		}
@@ -661,12 +661,15 @@ function cwscsRejectItem() {
 			$subject = 'Update from '.get_option('siteurl');
 			$test = wp_mail($to, $subject, $body, $headers);
 			if ($test)
-				$msg .= '<p class="successmsg">An email was sent. </p>';
-			else
-				$msg .= '<p class="failmsg">Could not send email. </p>';
+				echo '<p class="successmsg">An email was sent. </p>';
+			else {
+				echo '<p class="failmsg">Could not send email. </p>';
+				$ok = false;
+			}
 		}
 	}
-	echo '<p class="successmsg">The item has been saved to the database as REJECTED. </p>';
+	if ($ok)
+		echo '<p class="successmsg">The item has been saved to the database as REJECTED. </p>';
 }
 
 // Administrator added a payment
@@ -674,30 +677,30 @@ function cwscsSavePayment() {
 	global $wpdb;
 	$prefix = $wpdb->prefix;
 	$wpdb->show_errors();
-	$msg = "";
+	$ok = true;
 	$url = get_site_url();
 	$_POST['item_id'] = intval($_POST['item_id']);
 	if (!isset($_POST) || !isset($_POST['item_id']) || $_POST['item_id'] <= 0) {
-		$msg .= '<p class="failmsg">There was an error rejecting this item. Please refresh and try again. </p>';
+		echo '<p class="failmsg">There was an error rejecting this item. Please refresh and try again. </p>';
+		$ok = false;
 	} elseif (!isset($_POST['paidpayment']) || $_POST['paidpayment'] < 0) {
-		$msg .= '<p class="failmsg">Please enter a valid payment. </p>';	
+		echo '<p class="failmsg">Please enter a valid payment. </p>';
+		$ok = false;
 	} else {
 		$table_name = $prefix.'cwscs_inventory'; //custom table name
         $id = sanitize_text_field($_POST['item_id']);
 		$paid = sanitize_text_field($_POST['paidpayment']) * 1;
 	    $result = $wpdb->query( $wpdb->prepare("UPDATE $table_name SET paid = ".$paid." WHERE ID =".$id));
 		if ($wpdb->last_error) {
-			$tmp = 'Could not save payment for item. Error is '.$wpdb->last_error.'. ';
-			$msg = '<p class="failmsg">'.$tmp.'</p>';
-			// logerror
+			echo '<p class="failmsg">Could not save payment for item. Error is '.$wpdb->last_error.'. </p>';
+			$ok = false;
 		} elseif (!$result) { // ok but no update
-			$tmp = 'No change made to payment for item. ';
-			$msg = '<p class="warnmsg">'.$tmp.'</p>';
+			echo '<p class="warnmsg">'.$tmp.'</p>';
+			$ok = false;
 		}
 	}// sku and item_id
-	if ($msg == "")
-		$msg = '<p class="successmsg">Payment has been saved successfully. </p>';	
-	echo $msg;
+	if ($ok)
+		echo '<p class="successmsg">Payment has been saved successfully. </p>';	
 }
 
 //////////////////////////////////
@@ -948,7 +951,6 @@ function cwscsGetWooBySkuAdmin($sku) {
 
 // WooCommerce - add product
 function cwscsAddItemToWCadmin($post, $status) {
-	$msg = "";
 	// get the item from the inventory table and use that info to add to WC
 	$item = cwscsGetInventoryByID(sanitize_text_field($post['item_id']));
 	if (isset($item->item_desc)) {

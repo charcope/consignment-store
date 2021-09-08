@@ -235,7 +235,6 @@ class cws_consignment_Admin {
 							// show item details, all images and the approve/reject form
 							foreach ($results as $i => $row) {
 								if ($row->ID == intval($clean_item_id)) {
-									echo 'Showing details for '.esc_html($clean_item_id).'<br />';
 									showApproveRejectForm($current_url, $menu_slug, $row);
 									$found = true;
 								}
@@ -609,7 +608,7 @@ function cwscsApproveItem() {
 				if ($test)
 					echo '<p class="successmsg">An email sent. </p>';
 				else
-					echo '<p class="failmsg">Could not send email to '.sanitize_email($_POST['approved-email']).' from '.$from.', subject: '.$subject.', body: '.$body.'. </p>';
+					echo '<p class="failmsg">Could not send email. </p>';
 			}
 		}
 	} // END no errors after add to woo, update to inventory
@@ -636,7 +635,7 @@ function cwscsRejectItem() {
 				if (isset($_POST['item_image'.$i]) && $_POST['item_image'.$i] > 0) {
 					$isImageDeleted = wp_delete_attachment(sanitize_text_field($_POST['item_image'.$i]), false ); // send to trash
 					if (!$isImageDeleted) {
-						echo 'Could not delete image '.sanitize_text_field($_POST['item_image'.$i]).'. ';
+						echo 'Could not delete image. ';
 						$ok = false;
 					}
 				}
@@ -692,10 +691,10 @@ function cwscsSavePayment() {
 		$paid = sanitize_text_field($_POST['paidpayment']) * 1;
 	    $result = $wpdb->query( $wpdb->prepare("UPDATE $table_name SET paid = ".$paid." WHERE ID =".$id));
 		if ($wpdb->last_error) {
-			echo '<p class="failmsg">Could not save payment for item. Error is '.$wpdb->last_error.'. </p>';
+			echo '<p class="failmsg">Could not save payment for item. Error is '.esc_html($wpdb->last_error).'. </p>';
 			$ok = false;
 		} elseif (!$result) { // ok but no update
-			echo '<p class="warnmsg">'.$tmp.'</p>';
+			echo '<p class="warnmsg">Nothing was updated.</p>';
 			$ok = false;
 		}
 	}// sku and item_id

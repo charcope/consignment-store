@@ -27,27 +27,28 @@ function cwscsShowSubmittedPage($current_url, $menu_slug, $results) {
 				<td>'.$ctr.'. '.esc_html($row->date_added).'</td>
 				<td>'.esc_html($row->seller_name).', '.esc_html($row->email).', '.esc_html($row->phone).'<br />Split: '.esc_html($row->store_split).'</td>
 				<td>';
-				echo cwscsShowItemDeets($row, false, true);
+				cwscsShowItemDeets($row, false, true);
 				echo '</td>
 				<td align="center">
-					<form action="'.$current_url.'?page='.$menu_slug.'" method="post">
+					<form action="'.esc_html($current_url).'?page='.esc_html($menu_slug).'" method="post">
 						<input type="hidden" value="'.esc_html($row->ID).'" name="item_id">
 						<button type="submit" class="single_add_to_cart_button button">Approve / Reject</button>
 					</form>	
 				</td>
 			</tr>';
 		}
-		echo '</tbody><tfoot><th colspan=4>Total Items to Review: '.$ctr.'</th></tr></tfoot></table>';
+		echo '</tbody><tfoot><th colspan=4>Total Items to Review: '.esc_html($ctr).'</th></tr></tfoot></table>';
 	}
 }
 
 // They selected an item to approve or reject
 function showApproveRejectForm($current_url, $menu_slug, $row) {
 	$splits = cwscsGetAllSplits();
-	echo cwscsShowItemDeets($row, true, true); // show deets and all images
+	echo '<h3>'.esc_html($row->item_title).'</h3>';
+	cwscsShowItemDeets($row, true, true); // show deets and all images
 	$_POST['item_id'] = intval($_POST['item_id']);
 	echo
-	'<form action="'.$current_url.'?page='.$menu_slug.'" method="post" class="cwsreview_item">
+	'<form action="'.esc_html($current_url).'?page='.esc_html($menu_slug).'" method="post" class="cwsreview_item">
 		<input type="hidden" name="item_id" value="'.esc_html($_POST['item_id']).'" />
 		<input type="hidden" name="item_image1" value="'.esc_html($row->item_image1).'" />
 		<input type="hidden" name="item_image2" value="'.esc_html($row->item_image2).'" />
@@ -81,8 +82,8 @@ function showApproveRejectForm($current_url, $menu_slug, $row) {
 			$approved = array(1=>"Approve", 2=>"Reject");
 			foreach ($approved as $i =>$s) {
 				echo '
-				<label class="radio" for="approved_'.$i.'">
-					<input type="radio" name="approved" required id="approved_'.$i.'" class="cwscheckapproved" value="'.$i.'" ';
+				<label class="radio" for="approved_'.esc_html($i).'">
+					<input type="radio" name="approved" required id="approved_'.esc_html($i).'" class="cwscheckapproved" value="'.esc_html($i).'" ';
 					if ($i == $row->approved)
 						echo ' checked="checked" ';
 					echo '/> '.esc_html($s).'
@@ -93,8 +94,10 @@ function showApproveRejectForm($current_url, $menu_slug, $row) {
 			$cwshidden = "";
 		else
 			$cwshidden = "cwshidden ";
+		$sale = esc_html($row->item_sale);
+		$sale = $sale * 1;
 		echo '
-		<div id="approved-email" class="'.$cwshidden.'email-msg">
+		<div id="approved-email" class="'.esc_html($cwshidden).'email-msg">
 			<p id="p-approved_sendemail">
 				<label for "approved_sendemail">Send An Email Upon Approval?</label>';
 				echo '
@@ -109,7 +112,7 @@ function showApproveRejectForm($current_url, $menu_slug, $row) {
 				<label>Email To</label>
 				<input type="email" name="approved-email" value="'.esc_html($row->email).'" />
 				<label>Body of Email</label>
-				<textarea name="approved-body">We have approved your item: '.esc_html($row->item_title)."\r\n\r\nThe sale price will be $".number_format($row->item_sale, 2)."\r\n\r\nWe will split any proceeds 50 / 50. \r\n\r\nIf the item does not sell within 6 months we will donate it. \r\n\r\nYou may drop it off during store hours. \r\n\r\nBe sure to see this item and other items in the store on our website.\r\n\r\nThanks, Store Manager</textarea>
+				<textarea name="approved-body">We have approved your item: '.esc_html($row->item_title)."\r\n\r\nThe sale price will be $".number_format($sale, 2)."\r\n\r\nWe will split any proceeds 50 / 50. \r\n\r\nIf the item does not sell within 6 months we will donate it. \r\n\r\nYou may drop it off during store hours. \r\n\r\nBe sure to see this item and other items in the store on our website.\r\n\r\nThanks, Store Manager</textarea>
 			</div>".'
 		</div>';
 		if ($row->approved == 2)
@@ -117,7 +120,7 @@ function showApproveRejectForm($current_url, $menu_slug, $row) {
 		else
 			$cwshidden = "cwshidden ";
 		echo '	
-		<div id="rejected-email" class="'.$cwshidden.'email-msg">
+		<div id="rejected-email" class="'.esc_html($cwshidden).'email-msg">
 			<p id="p-rejected_sendemail">
 				<label for "rejected_sendemail">Send An Email Upon Rejection?</label>';
 				echo '
@@ -172,10 +175,10 @@ function cwscsShowPayoutsPage($current_url, $menu_slug, $search_sku, $search_kw,
 			$ctr++;
 			echo 
 			'<tr>
-				<td>'.$ctr.'. '.esc_html($row->date_added).'</td>
+				<td>'.esc_html($ctr).'. '.esc_html($row->date_added).'</td>
 				<td>'.esc_html($row->seller_name).', '.esc_html($row->email).', '.esc_html($row->phone).'<br />Split: '.esc_html($row->store_split).'</td>
 				<td>';
-				echo cwscsShowItemDeets($row, false, true);
+				cwscsShowItemDeets($row, false, true);
 				echo '</td>
 				<td>';
 				// store status
@@ -183,13 +186,15 @@ function cwscsShowPayoutsPage($current_url, $menu_slug, $search_sku, $search_kw,
 					echo 'In Store & In Stock';
 				elseif (isset($row->woo['woo_stock']) && $row->woo['woo_stock'] == "outofstock") {
 					echo 'Sold ';
-					if (isset($row->woo['woo_sales'])) // qty sold
-						echo 'for $'.number_format($row->woo['woo_price'],2);
+					if (isset($row->woo['woo_sales'])) { // qty sold
+						$price = esc_html($row->woo['woo_price']);
+						echo 'for $'.number_format($price,2);
+					}
 				} else
 					echo 'Approved';
 				echo '</td>
 				<td align="center">
-					<form action="'.$current_url.'?page='.$menu_slug.'" method="post">
+					<form action="'.esc_html($current_url).'?page='.esc_html($menu_slug).'" method="post">
 						<input type="hidden" value="'.esc_html($row->ID).'" name="item_id">
 						<input type="hidden" value="'.esc_html($row->woo['woo_price']).'" name="sell_price">
 						<button type="submit" class="single_add_to_cart_button button">Manage Payment</button>
@@ -200,25 +205,25 @@ function cwscsShowPayoutsPage($current_url, $menu_slug, $search_sku, $search_kw,
 		echo '
 		</tbody><tfoot>
 			<tr>
-				<th colspan=6>Total Items: '.$ctr.'</th>
+				<th colspan=6>Total Items: '.esc_html($ctr).'</th>
 			</tr>
 		</tfoot></table>';
 	} // END there are results
 	elseif (is_string($results) && $results != "") {
 		echo esc_html($results);
 	} else
-		echo '<p>No results found: '.$results.'</p>';
+		echo '<p>No results found. </p>';
 }
 // Display search and filter form for Payouts
 function showFilterPayouts($current_url, $menu_slug, $search_sku, $search_kw, $show="unpaid") {
 	$types = array("unpaid", "paid", "all");
 	echo '
-	<form action="'.$current_url.'?page='.$menu_slug.'" method="post" class="cwscsradio_group">
+	<form action="'.esc_html($current_url).'?page='.esc_html($menu_slug).'" method="post" class="cwscsradio_group">
 		<label><strong>Show:</strong> </label>';
 	foreach ($types as $i => $t) {
 		echo '
-		<label for="'.$t.'">
-			<input type="radio" name="payment_type" id="'.$t.'" value="'.esc_html($t).'"';
+		<label for="'.esc_html($t).'">
+			<input type="radio" name="payment_type" id="'.esc_html($t).'" value="'.esc_html($t).'"';
 		if (isset($show) && $show == $t) {
 			echo ' checked="checked" ';
 		}
@@ -235,15 +240,15 @@ function showFilterPayouts($current_url, $menu_slug, $search_sku, $search_kw, $s
 function cwscsShowPaymentForm($current_url, $menu_slug, $item) {
 	$splits = cwscsGetAllSplits();
 	echo '
-	<form action="'.$current_url.'?page='.$menu_slug.'" method="post" class="cwscsradio_group">
+	<form action="'.esc_html($current_url).'?page='.esc_html($menu_slug).'" method="post" class="cwscsradio_group">
 		<h2>Add Payment</h2>
 		<input type="hidden" name="item_id" value="'.esc_html($_POST['item_id']).'" />';
-		// sell price
-		$_POST['sell_price'] = intval($_POST['sell_price']);
+		
 		if (isset($_POST['sell_price']) && $_POST['sell_price'] > 0) {
+			$sell_price = sanitize_text_field($_POST['sell_price']);
 			echo '
 			<p>
-				<label for "sell_price">Sold for: $'.number_format($_POST['sell_price'],2).'</label>
+				<label for "sell_price">Sold for: $'.esc_html(number_format($sell_price,2)).'</label>
 			</p>';
 		}
 		// show store split
@@ -279,10 +284,10 @@ function cwscsShowSettingsMenu($current_url, $menu_slug) {
 	foreach ($tabs as $i => $tab) {
 		if ($i == 0 || $i == 5) { // hide General and recaptcha v3
 			echo '
-    	    <button class="cwscs_tablinks cwshidden" id="btntab_'.$i.'"><span class="dashicons '.$icons[$i].'"></span>'.$tab.'</button>';
+    	    <button class="cwscs_tablinks cwshidden" id="btntab_'.esc_html($i).'"><span class="dashicons '.esc_html($icons[$i]).'"></span>'.esc_html($tab).'</button>';
 		} else {
 			echo '
-    	    <button class="cwscs_tablinks" id="btntab_'.$i.'"><span class="dashicons '.$icons[$i].'"></span>'.$tab.'</button>';
+    	    <button class="cwscs_tablinks" id="btntab_'.esc_html($i).'"><span class="dashicons '.esc_html($icons[$i]).'"></span>'.esc_html($tab).'</button>';
 		}
 	}
 	echo '
@@ -290,8 +295,8 @@ function cwscsShowSettingsMenu($current_url, $menu_slug) {
     // Put the title on each page
 	foreach ($tabs as $i => $tab) {
 		echo '
-		<div id="contenttab_'.$i.'" class="cwscs_tabcontent cwshidden">
-			<h3>'.$tab.'</h3>'.
+		<div id="contenttab_'.esc_html($i).'" class="cwscs_tabcontent cwshidden">
+			<h3>'.esc_html($tab).'</h3>'.
 			$content[$i].'
 		</div>';
 	} // END loop on content
@@ -349,7 +354,6 @@ function cwscsGetSettingsContent() {
 
 // Display the item. If show_more is true, show all images
 function cwscsShowItemDeets($row, $show_more=false, $show_pics=true) {
-	$ct = "";
 	if ($show_more)
 		$w = 200; // bigger images
 	else
@@ -359,8 +363,8 @@ function cwscsShowItemDeets($row, $show_more=false, $show_pics=true) {
 			$attachment_id = $row->item_image1;
 			$image_thumbnail = wp_get_attachment_image_src($attachment_id, 'single-thumbnail');
 			if ( $image_thumbnail ) {
-				$ct .= '
-				<img class="alignnone size-single-thumbnail" src="'.$image_thumbnail[0].'" alt="item_image1" width="'.$w.'" >';
+				echo '
+				<img class="alignnone size-single-thumbnail" src="'.esc_html($image_thumbnail[0]).'" alt="item_image1" width="'.esc_html($w).'" ><br />';
 			} // END show image
 		}
 		if ($show_more) {
@@ -368,45 +372,49 @@ function cwscsShowItemDeets($row, $show_more=false, $show_pics=true) {
 				$attachment_id = $row->item_image2;
 				$image_full = wp_get_attachment_image_src($attachment_id, 'full');
 				if ( $image_full ) {
-					$ct .= '
-					<img class="alignnone size-single-thumbnail" src="'.$image_full[0].'" alt="item_image 2" width="'.$w.'" ><br />';
+					echo '
+					<img class="alignnone size-single-thumbnail" src="'.esc_html($image_full[0]).'" alt="item_image 2" width="'.esc_html($w).'" ><br />';
 				} // END show image
 			}
 			if ($row->item_image3 > 0) {
 				$attachment_id = $row->item_image3;
 				$image_full = wp_get_attachment_image_src($attachment_id, 'full');
 				if ( $image_full ) {
-					$ct .= '
-					<img class="alignnone size-single-thumbnail" src="'.$image_full[0].'" alt="item_image3" width="'.$w.'" ><br />';
+					echo '
+					<img class="alignnone size-single-thumbnail" src="'.esc_html($image_full[0]).'" alt="item_image3" width="'.esc_html($w).'" ><br />';
 				} // END show image
 			}
 			if ($row->item_image4 > 0) {
 				$attachment_id = $row->item_image4;
 				$image_full = wp_get_attachment_image_src($attachment_id, 'full');
 				if ( $image_full ) {
-					$ct .= '
-					<img class="alignnone size-single-thumbnail" src="'.$image_full[0].'" alt="item_image 4" width="'.$w.'" ><br />';
+					echo '
+					<img class="alignnone size-single-thumbnail" src="'.esc_html($image_full[0]).'" alt="item_image 4" width="'.esc_html($w).'" ><br />';
 				} // END show image
 			}
 		} // END show more
 	} // END show pics
-	$ct .= '<br />
+	echo '<br />
 	<strong>'.esc_html($row->item_title).'</strong><br />';
 	if ($row->item_desc != "")
-		$ct .=  '<strong>Description: </strong>'.sanitize_textarea_field($row->item_desc).'. ';
-	if ($row->item_retail > 0)
-		$ct .=  '<strong>Retail Price: </strong>$'.number_format($row->item_retail).'. ';
-	if ($row->item_sale > 0)
-		$ct .=  '<strong>Store Price: </strong>$'.number_format($row->item_sale).'. ';
+		echo  '<strong>Description: </strong>'.esc_html($row->item_desc).'. ';
+	if ($row->item_retail > 0) {
+		$price = esc_html($row->item_retail);
+		echo  '<strong>Retail Price: </strong>$'.number_format($price,2).'. ';
+	}
+	if ($row->item_sale > 0) {
+		$price = esc_html($row->item_sale);
+		echo  '<strong>Store Price: </strong>$'.number_format($price,2).'. ';
+	}
 	if ($row->item_size != "")
-		$ct .=  '<strong>Size: </strong>'.esc_html($row->item_size).'. ';
+		echo  '<strong>Size: </strong>'.esc_html($row->item_size).'. ';
 	if ($row->item_colour != "")
-		$ct .=  '<strong>Colour: </strong>'.esc_html($row->item_colour).'. ';
+		echo  '<strong>Colour: </strong>'.esc_html($row->item_colour).'. ';
 	if ($row->item_state != "")
-		$ct .=  '<strong>State of Item: </strong>'.esc_html($row->item_state).'. ';
+		echo  '<strong>State of Item: </strong>'.esc_html($row->item_state).'. ';
 	if ($row->sku != "")
-		$ct .=  '<strong>SKU: </strong>'.esc_html($row->sku).'. ';
-	return $ct;	
+		echo  '<strong>SKU: </strong>'.esc_html($row->sku).'. ';
+	return;	
 }
 
 // Display categories for update

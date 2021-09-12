@@ -153,7 +153,7 @@ class cws_consignment_Public {
 		// SWITCH ON ACTION, get cat prices if get_cat_prices
 		if (!isset($_POST['thistask'])) {
 			$thistask = "None";
-			$msg = "No task passed";
+			$results = "No task passed";
 			$status = 0;
 		} else
 			$thistask = sanitize_text_field($_POST['thistask']); //what shall we do
@@ -298,13 +298,13 @@ class cws_consignment_Public {
 						
 						$attachment_id = wp_insert_attachment( $post_info, $file_path, $parent_post_id );
 						if (!isset( $attachment_id) || $attachment_id == 0) {
-							$msg .= '<p class="failmsg">There was an error adding image '.$attachment_id.'</p>';
+							$msg .= '<p class="failmsg">There was an error adding image.</p>';
 						} else {
 							$attachments[] = $attachment_id;
 							$attach_data = wp_generate_attachment_metadata( $attachment_id, $file_path );
 							$ok = wp_update_attachment_metadata( $attachment_id,  $attach_data );
 							if (!$ok)
-								$msg .= '<p class="failmsg">There was an error attaching the image '.$ok.'</p>';
+								$msg .= '<p class="failmsg">There was an error attaching the image.</p>';
 							// remove extra images
 							$msg .= cwscsRemoveExtraImages($attachment_id);
 						}
@@ -373,7 +373,7 @@ class cws_consignment_Public {
 		<div class="additemform">';
 		// SHOW regular additem form
 		$ct .= '<br />
-		<form action="'.$current_url.'" method="post" enctype="multipart/form-data" class="cwscs_form" id="cwscs_formadditem" >';
+		<form action="'.esc_html($current_url).'" method="post" enctype="multipart/form-data" class="cwscs_form" id="cwscs_formadditem" >';
 				if ($admin) {
 					// enter sku if staff
 					$ct .= '
@@ -391,7 +391,7 @@ class cws_consignment_Public {
 					<select id="item_cat" name="item_cat" required>
 						<option value="">Choose &hellip;</option>';
 						foreach ($cats as $i => $obj) {
-							$ct .= '<option value="'.$obj->term_id.'">'.$obj->name.'</option>';
+							$ct .= '<option value="'.esc_html($obj->term_id).'">'.esc_html($obj->name).'</option>';
 						}
 						$ct .= '
 					</select>
@@ -478,7 +478,7 @@ class cws_consignment_Public {
 				$ct .= '
 					<input type="text" id="email" name="email" maxlength=255 placeholder="" ';
 					if ($email != "")
-						$ct .= 'value="'.$email.'" ';
+						$ct .= 'value="'.esc_html($email).'" ';
 					else
 						$ct .= 'value=""';
 					$ct .= '" required />
@@ -493,10 +493,10 @@ class cws_consignment_Public {
 						<select id="store_split" name="store_split" required>';
 						foreach ($splits as $i => $s) {
 							$ct .= '
-							<option value='.$i;
+							<option value='.esc_html($i);
 							if ($split == $i)
 								$ct .= ' selected="selected" ';
-							$ct .= '>'.$s.'</option>';
+							$ct .= '>'.esc_html($s).'</option>';
 						}
 						$ct .= '
 						</select>
@@ -509,7 +509,7 @@ class cws_consignment_Public {
 				if ($policy[0] == 1) {
 					$ct .= '
 					<p><a href="javascript:void(0);" data-divid="policy" class="toggledivbyid"><span class="dashicons dashicons-visibility"></span> Click to show or hide the policy on selling items in the our consignment store.</a></p>
-					<div id="policy" class="hidden">'.$policy[1].'</div>
+					<div id="policy" class="hidden">'.esc_html($policy[1]).'</div>
 					<p id="p-policy_accepted">
 						<label for "policy_accepted">Please indicate your acceptance of the store policy. </label>
 						<label class="radio" for="policy_accepted">
@@ -531,9 +531,9 @@ class cws_consignment_Public {
 				if (isset($recaptcha) && isset($recaptcha['version'])) {
 					if ($recaptcha['version'] == "v2") {
 						$ct .= '
-						<input type="hidden" name="rc2" id="rc2" value="'.$recaptcha['site_key'].'" >
+						<input type="hidden" name="rc2" id="rc2" value="'.esc_html($recaptcha['site_key']).'" >
 						<div class="clear">&nbsp;</div>
-						<div class="g-recaptcha" data-sitekey="'.$recaptcha['site_key'].'"  data-callback="cc_enableSubmitBtn">></div>
+						<div class="g-recaptcha" data-sitekey="'.esc_attr($recaptcha['site_key']).'"  data-callback="cc_enableSubmitBtn">></div>
       <br/>';
 	  					$disabled = 'disabled="disabled" ';
 					} 
@@ -545,7 +545,7 @@ class cws_consignment_Public {
 				}
 				$ct .= '
 				<p id="cwscs_errormsg" class="failmsg hidden"></p>
-				<button type="submit" name="additem" id="cc_additem" class="single_add_to_cart_button button" '.$disabled.'>Add Item</button>'; 
+				<button type="submit" name="additem" id="cc_additem" class="single_add_to_cart_button button" '.esc_html($disabled).'>Add Item</button>'; 
 				if ($disabled != "")
 					$ct .= '<p>The Add Item button is disabled until the form is complete and the "I am not a robot checkbox is clicked". </p>';
 			$ct .= '	
@@ -602,7 +602,7 @@ function cwscsGetPricesByCategory($cats) {
 	foreach ($cats as $i => $cat) {
 		if (isset($cat->term_id) && $cat->term_id > 0) {
 			// get all post_ids for the products in this cat from term_relationships 
-			$allprods = $wpdb->get_results( 'SELECT object_id FROM '.$prefix.'term_relationships WHERE term_taxonomy_id="'.$cat->term_id.'"' ); 
+			$allprods = $wpdb->get_results( 'SELECT object_id FROM '.$prefix.'term_relationships WHERE term_taxonomy_id="'.esc_html($cat->term_id).'"' ); 
 			if ((is_array($allprods) || is_object($allprods)) && count($allprods) > 0) {
 				$str = "(";
 				$conn = '';
@@ -616,8 +616,8 @@ function cwscsGetPricesByCategory($cats) {
 				// get lowest price -- metavalue is character so must convert to numeric and then sort
 				$values = $wpdb->get_results( 'SELECT meta_value FROM '.$prefix.'posts as a, '.$prefix.'postmeta as b WHERE a.ID=b.post_id AND a.post_type="product" AND a.post_status="publish" AND b.post_id IN '.$str.' AND b.meta_key ="_price" AND b.meta_value IS NOT NULL AND b.meta_value!="" ORDER BY b.meta_value ASC' );
 				if ((is_array($values) || is_object($values)) && count($values) > 0) {
-					$results[$ctr_r]['term_id'] = $cat->term_id;
-					$results[$ctr_r]['name'] = $cat->name;
+					$results[$ctr_r]['term_id'] = esc_html($cat->term_id);
+					$results[$ctr_r]['name'] = esc_html($cat->name);
 					$nums = array();
 					$total = count($values);
 					$amt = 0;
@@ -718,7 +718,7 @@ function cwscsValidateAddItem($secret) {
 	$required = array('item_title'=>'Item Title', 'item_cat'=>'Category', 'item_retail'=>'Retail Price', 'item_sale'=>'Sale Price', 'seller_name'=>'Seller Name', 'phone'=>'Phone', 'email'=>'Email');
 	foreach ($required as $key => $n) {
 		if (!isset($_POST[$key]) || $_POST[$key] == "") {
-			$error .= 'Please enter '.$n.'. ';
+			$error .= 'Please enter '.esc_html($n).'. ';
 			$status = 0;
 		}
 	} // END loop on $required
@@ -732,7 +732,7 @@ function cwscsValidateAddItem($secret) {
 			$error .= 'Please check the the reCaptcha checkbox. ';
 			$status = 0;
 		} else {
-			$captcha = $_POST['g-recaptcha-response'];
+			$captcha = sanitize_text_field($_POST['g-recaptcha-response']);
 			$ip = $_SERVER['REMOTE_ADDR'];
 			// post request to server
 			$url = 'https://www.google.com/recaptcha/api/siteverify?secret=' . urlencode($secret) .  '&response=' . urlencode($captcha);
@@ -786,25 +786,25 @@ function cwscsAddItem($post, $attachments) {
 		$prefix.'cwscs_inventory', 
 			array( 
 				'item_title' => sanitize_text_field($post['item_title']), 
-				'item_cat' => $post['item_cat'], 
+				'item_cat' => sanitize_text_field($post['item_cat']), 
 				'item_desc' => sanitize_textarea_field($post['item_desc']), 
 				'item_tags' => sanitize_text_field($post['item_tags']), 
-				'item_retail' => $post['item_retail'], 
-				'item_sale' => $post['item_sale'], 
+				'item_retail' => sanitize_text_field($post['item_retail']),
+				'item_sale' => sanitize_text_field($post['item_sale']),
 				'item_size' => sanitize_text_field($post['item_size']), 
 				'item_colour' => sanitize_text_field($post['item_colour']), 
 				'item_state' => sanitize_text_field($post['item_state']), 
 				'seller_name' => sanitize_text_field($post['seller_name']), 
 				'phone' => sanitize_text_field($post['phone']), 
 				'email' => sanitize_email($post['email']), 
-				'policy_accepted' => $post['policy_accepted'],
+				'policy_accepted' => sanitize_text_field($post['policy_accepted']),
 				'sku' => sanitize_text_field($post['sku']),
-				'store_split' => $post['store_split'],
-				'approved' => $approved,
-				'item_image1' => $att1,
-				'item_image2' => $att2,
-				'item_image3' => $att3,
-				'item_image4' => $att4,
+				'store_split' => sanitize_text_field($post['store_split']),
+				'approved' => sanitize_text_field($approved),
+				'item_image1' => sanitize_text_field($att1),
+				'item_image2' => sanitize_text_field($att2),
+				'item_image3' => sanitize_text_field($att3),
+				'item_image4' => sanitize_text_field($att4),
 				'date_added'=>current_time("Y-m-d")
 			), 
 			array( 
@@ -814,10 +814,7 @@ function cwscsAddItem($post, $attachments) {
 	$wpdb->print_error();
 	if ($wpdb->insert_id < 0) {
 		$result = -1;
-		$tmp = 'Could not add inventory item for '.sanitize_text_field($post['seller_name']).', '.sanitize_email($post['email']).'. Error is '.$wpdb->last_error.'. ';
-		foreach ($post as $n => $v) {
-			$tmp .= "$n: $v \r\n";
-		}
+		$tmp = 'Could not add inventory item for '.sanitize_text_field($post['seller_name']).', '.sanitize_email($post['email']).'. Error is '.sanitize_text_field($wpdb->last_error).'. ';
 		$system = "public";
 		$fcn = "cwscsAddItem";
 		$file = "class-cws-consignment-public.php";
@@ -853,22 +850,22 @@ function cwscsAddItemToWC($post, $attachments, $status) {
 		}
 	}
 	// ok continue	
-	$desc = $post['item_desc'];
+	$desc = sanitize_textarea_field($post['item_desc']);
 	if (isset($post['item_size']) && $post['item_size'] != "") {
 		if (stristr("ize", $post['item_size']))
-			$desc .= "\r\n".$post['item_size'];
+			$desc .= "\r\n".sanitize_text_field($post['item_size']);
 		else	
-			$desc .= "\r\nSize: ".$post['item_size'];
+			$desc .= "\r\nSize: ".sanitize_text_field($post['item_size']);
 	}
 	if (isset($post['item_colour']) && $post['item_colour'] != "")
-		$desc .= "\r\n".$post['item_colour'];	
+		$desc .= "\r\n".sanitize_text_field($post['item_colour']);
 	if (isset($post['item_state']) && $post['item_state'] != "")
-		$desc .= "\r\nState of item: ".$post['item_state'];		
+		$desc .= "\r\nState of item: ".sanitize_text_field($post['item_state']);
 	$options = array(
-		'post_title' => $post['item_title'],
+		'post_title' => sanitize_text_field($post['item_title']),
 		"post_type" => "product", 
-		"post_status" => $status, 
-		'post_content' => $desc,
+		"post_status" => sanitize_text_field($status),
+		'post_content' => $desc, // already sanitized
 		'post_excerpt' => $desc
 	);
 	$post_id = wp_insert_post($options);
@@ -881,8 +878,8 @@ function cwscsAddItemToWC($post, $attachments, $status) {
 		update_post_meta( $post_id, 'total_sales', '0' );
 		update_post_meta( $post_id, '_downloadable', 'no' );
 		update_post_meta( $post_id, '_virtual', 'no' );
-		update_post_meta( $post_id, '_regular_price', $post['item_retail']);
-		update_post_meta( $post_id, '_sale_price', $post['item_sale']);
+		update_post_meta( $post_id, '_regular_price', sanitize_text_field($post['item_retail']));
+		update_post_meta( $post_id, '_sale_price', sanitize_text_field($post['item_sale']));
 		update_post_meta( $post_id, '_purchase_note', '' );
 		update_post_meta( $post_id, '_featured', 'no' );
 		update_post_meta( $post_id, '_weight', '' );
@@ -893,13 +890,13 @@ function cwscsAddItemToWC($post, $attachments, $status) {
 		update_post_meta( $post_id, '_product_attributes', array() );
 		update_post_meta( $post_id, '_sale_price_dates_from', '' );
 		update_post_meta( $post_id, '_sale_price_dates_to', '' );
-		update_post_meta( $post_id, '_price', $post['item_sale'] );
+		update_post_meta( $post_id, '_price', sanitize_text_field($post['item_sale']));
 		update_post_meta( $post_id, '_sold_individually', '' );
 		update_post_meta( $post_id, '_manage_stock', 'yes' );
 		wc_update_product_stock($post_id, 1, 'set');
 		update_post_meta( $post_id, '_backorders', 'no' );
 		//update_post_meta( $post_id, '_yoast_wpseo_meta-robots-noindex', '2' ); // shop and search results
-		// update_post_meta( $post_id, '_stock', $post['qty'] );
+		// update_post_meta( $post_id, '_stock', sanitize_text_field($post['qty']) );
 		// add the feature image
 		if (isset($attachments[0]) && $attachments[0] > 0)
 			set_post_thumbnail( $post_id, $attachments[0] );
@@ -918,13 +915,11 @@ function cwscsAddItemToWC($post, $attachments, $status) {
 			}
 			if (isset($attach_id_str) && $attach_id_str != "") {
 				$meta_key = update_post_meta($post_id, '_product_image_gallery', $attach_id_str);
-				if (!$meta_key)
-					echo '<p>Could not add '.esc_html($attach_id_str).'</p>';
 			}
 		} // more than 1 image to add
 		// add category to product
 		if (isset($post['item_cat']) && $post['item_cat'] > 0) {
-			wp_set_post_terms( $post_id, array($post['item_cat']), 'product_cat', true );
+			wp_set_post_terms( $post_id, array(sanitize_text_field($post['item_cat'])), 'product_cat', true );
 		}
 	}
 	return $post_id;
@@ -936,7 +931,7 @@ function cwscsGetWooBySku($sku) {
 	$results = array();
 	$wpdb->show_errors();
 	// get post id
-	$pms = $wpdb->get_results( 'SELECT post_id FROM '.$prefix.'postmeta WHERE meta_key="_sku" AND meta_value="'.$sku.'"' ); 
+	$pms = $wpdb->get_results( 'SELECT post_id FROM '.$prefix.'postmeta WHERE meta_key="_sku" AND meta_value="'.sanitize_text_field($sku).'"' ); 
 	$post_id = 0;
 	if (is_object($pms) || is_array($pms)) {
 		foreach ($pms as $i => $pm) {
@@ -944,10 +939,10 @@ function cwscsGetWooBySku($sku) {
 		}
 	} else {
 		$results['status'] = 0;
-		$results['msg'] = 'No item in store for sku '.$sku.' Error is '.$wpdb->last_error;
+		$results['msg'] = 'No item in store for sku '.esc_html($sku).' Error is '.esc_html($wpdb->last_error);
 	}
 	if (isset($post_id) && $post_id > 0) { // keep searching for info
-		$pms = $wpdb->get_results( 'SELECT meta_key, meta_value FROM '.$prefix.'postmeta WHERE post_id='.$post_id.' AND meta_key IN ("_stock_status", "total_sales","_price", "_regular_price")' ); 
+		$pms = $wpdb->get_results( 'SELECT meta_key, meta_value FROM '.$prefix.'postmeta WHERE post_id='.sanitize_text_field($post_id).' AND meta_key IN ("_stock_status", "total_sales","_price", "_regular_price")' ); 
 		if (is_object($pms) || is_array($pms)) {
 			// fetch data
 			$results = array("status"=>1, "msg"=>"", "post_id"=>$post_id);
@@ -957,7 +952,7 @@ function cwscsGetWooBySku($sku) {
 			}
 		} else {
 			$results['status'] = 0;
-			$results['msg'] = 'No details in store for sku '.$sku.', post id: '.$post_id.' Error is '.$wpdb->last_error;
+			$results['msg'] = 'No details in store for sku '.esc_html($sku).', post id: '.esc_html($post_id).'. ';
 		}
 	}
 	return $results;
@@ -1002,33 +997,31 @@ function cwscs_uploadImg() {
 	$allowed = array("image/gif", "image/jpeg", "image/png", "image/x-png", "image/pjpeg");
 	$img = "";
 	if (isset($_POST['tmpfilename']) && $_POST['tmpfilename'] != "")
-		$tmpfilename = $_POST['tmpfilename'];
+		$tmpfilename = sanitize_text_field($_POST['tmpfilename']);
 	else
 		$tmpfilename = 'newimg-'.date("Ymdhis").'.jpg';
 	if ($_FILES[$file_name]['error'] === UPLOAD_ERR_OK) {
 		if ($_FILES[$file_name]['name'] != "") {	
-			$type = $_FILES[$file_name]['type'];
+			$type = sanitize_text_field($_FILES[$file_name]['type']);
+			$size = sanitize_text_field($_FILES[$file_name]['size']);
 			if (!in_array($type, $allowed)) {
-				$msg .= '<p class="failmsg">Cannot load image #'.$i.", name: ".$_FILES[$file_name]['name']." since it is a ".$type.'. We can only accept image files. </p>';
+				$msg .= '<p class="failmsg">Cannot load image #'.esc_html($i).", since it is a ".esc_html($type).'. We can only accept image files. </p>';
 				$status = 0;
 			} elseif ($_FILES[$file_name]['size'] > 10000000) {
-				$msg .= '<p class="failmsg">Image #'.$i.' is too big! Can accept images that are bigger than 10Mb. This one is '.$_FILES[$file_name]['size'].' bytes. </p>';
+				$msg .= '<p class="failmsg">Image #'.esc_html($i).' is too big! Can accept images that are bigger than 10Mb. This one is '.esc_html($size).' bytes. </p>';
 				$status = 0;
 			} else {
 				// Can we upload it?
-				
 				$tmpfilename = str_replace("%20","_",$tmpfilename);
 				$partimgurl = $baseurl.'/'.date("Y").'/'.date("m").'/'.$tmpfilename;
 				$fullimgurl = $basedir.'/'.date("Y").'/'.date("m").'/'.$tmpfilename;
 				// move the image and return the image name
 				if (move_uploaded_file($_FILES[$file_name]['tmp_name'], $fullimgurl)) {
-					$msg .= 'Image has been uploaded to '.$fullimgurl.' It is '.$_FILES[$file_name]['size'].'bytes. ';
+					$msg .= 'Image has been uploaded to '.esc_html($fullimgurl).'. ';
 				} // END no errors in upload
 				else {
 					$status = 0;
-					$msg .= 'Could not upload to '.$fullimgurl.'. Contents of $_FILES is: ';
-					foreach ($_FILES[$file_name] as $n => $v)
-						$msg .= "$n: $v, ";
+					$msg .= 'Could not upload to '.esc_html($fullimgurl).'. ';
 					$img = "";
 				}
 			} // END upload

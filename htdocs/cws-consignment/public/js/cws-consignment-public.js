@@ -28,16 +28,10 @@
 								$('#catprices').html('<p class="failmsg">Sorry! There are no prices available to show at this time.</p>');
 								console.log("status is 0");
 							} else {
-								console.log('TEST: good results');
 								var ct = showCatPrices(results.data);
 								$('#catprices').html(ct);
 							}
 						}
-						
-						/*
-						this2.nextSibling.remove();        //remove current title
-						$(this2).after(data);              //insert server response
-						*/
 					});
 					
 				}

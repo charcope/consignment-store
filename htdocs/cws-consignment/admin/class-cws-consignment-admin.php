@@ -339,7 +339,7 @@ class cws_consignment_Admin {
 	// Handles my AJAX request.
 	public function cwscs_save_settings() {
 		// check referrer
-		//check_ajax_referer( 'cwscs_doajax' );
+		check_ajax_referer( 'cwscs_doajax' );
 		// get post vars
 		if (isset($_POST['cwscs_key']))
 			$cwscs_key = sanitize_text_field($_POST['cwscs_key']);

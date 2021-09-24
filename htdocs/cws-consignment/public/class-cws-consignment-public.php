@@ -148,7 +148,7 @@ class cws_consignment_Public {
 	 */
 	public function cwscs_ajax_add_item() {
 		// check referrer
-		//check_ajax_referer( 'cwscs_doajax' );
+		check_ajax_referer( 'cwscs_doajax', 'security' );
 		// get post vars
 		// SWITCH ON ACTION, get cat prices if get_cat_prices
 		if (!isset($_POST['thistask'])) {
@@ -197,6 +197,8 @@ class cws_consignment_Public {
 		elseif ($thistask == "uploadimage") {
 			$status = 1;
 			$results = cwscs_uploadImg();
+			if ($results['status'] == 0)
+				$status = 0;
 		} else {
 			$status = 0;
 			$results = "No action";
@@ -278,43 +280,49 @@ class cws_consignment_Public {
 				require_once( ABSPATH . 'wp-admin/includes/file.php' );
 				require_once( ABSPATH . 'wp-admin/includes/media.php' );
 				$attachments = array();
-				
+				$allowed = array("image/jpeg", "image/png", "image/x-png", "image/pjpeg");
+				$allowedExt = array("gif", "jpeg", "png", "jpg");
 				for ($i=1; $i<=4; $i++) {
 					$imagename = "filename".$i;
 					if ($_POST[$imagename] != "") {
-						$file_type = wp_check_filetype( $_POST[$imagename], null );
-						$fn = sanitize_text_field($_POST[$imagename]);
-						$attachment_title  = str_replace($baseurl.'/'.date("Y/m").'/', "", $fn); // just the file name
-						$file_path = str_replace($baseurl, $basedir, $fn);
-						// The ID of the post this attachment is for.
-						$parent_post_id = 0;
-						$post_info = array(
-							'guid'           => $fn,
-							'post_mime_type' => $file_type['type'],
-							'post_title'     => $attachment_title,
-							'post_content'   => '',
-							'post_status'    => 'inherit',
-						);
+						// getimagesize and other validations done in cwscs_uploadImg which does the actual upload as an ajax function. This is just the file url being saved here. Run a validation before attaching.
+						$fileInfo = wp_check_filetype($_POST[$imagename], null);
 						
-						$attachment_id = wp_insert_attachment( $post_info, $file_path, $parent_post_id );
-						if (!isset( $attachment_id) || $attachment_id == 0) {
-							$msg .= '<p class="failmsg">There was an error adding image.</p>';
-						} else {
-							$attachments[] = $attachment_id;
-							$attach_data = wp_generate_attachment_metadata( $attachment_id, $file_path );
-							$ok = wp_update_attachment_metadata( $attachment_id,  $attach_data );
-							if (!$ok)
-								$msg .= '<p class="failmsg">There was an error attaching the image.</p>';
-							// remove extra images
-							$msg .= cwscsRemoveExtraImages($attachment_id);
-						}
+						if (in_array($fileInfo['ext'], $allowedExt) && in_array($fileInfo['type'], $allowed)) {
+							$fn = sanitize_text_field($_POST[$imagename]);
+							$attachment_title  = str_replace($baseurl.'/'.date("Y/m").'/', "", $fn); // just the file name
+							$file_path = str_replace($baseurl, $basedir, $fn);
+							// The ID of the post this attachment is for.
+							$parent_post_id = 0;
+							$post_info = array(
+								'guid'           => $fn,
+								'post_mime_type' => $fileInfo['type'],
+								'post_title'     => $attachment_title,
+								'post_content'   => '',
+								'post_status'    => 'inherit',
+							);
+							
+							$attachment_id = wp_insert_attachment( $post_info, $file_path, $parent_post_id );
+							if (!isset( $attachment_id) || $attachment_id == 0) {
+								$msg .= '<p class="failmsg">There was an error adding image.</p>';
+							} else {
+								$attachments[] = $attachment_id;
+								$attach_data = wp_generate_attachment_metadata( $attachment_id, $file_path );
+								$ok = wp_update_attachment_metadata( $attachment_id,  $attach_data );
+								if (!$ok)
+									$msg .= '<p class="failmsg">There was an error attaching the image.</p>';
+								// remove extra images
+								$msg .= cwscsRemoveExtraImages($attachment_id);
+							}
+						} else
+							$msg .= '<p class="failmsg">Image submitted was not an image file.</p>';
 					} // END there was an image
 				} // END loop on 4 images
 				// if all still good then add to database
 				if ($msg == "" && $results['status'] == 1)
 					$insert_id = cwscsAddItem($_POST, $attachments);
 				else {
-					if ($msg != "")
+					if ($results['error'] != "")
 						$msg .= '<p class="failmsg">'.esc_html($results['error']).'</p>';
 					$insert_id = -1;
 				}
@@ -986,7 +994,7 @@ function cwscsGetAllSplits() {
 	$splits = array(50=>'50 / 50 (default)', 100=>"100 if donated");
 	return $splits;
 }
-// handle the image upload from the ajax function
+// handle the image upload from the ajax function - the form does not actually upload a file on submit. It is done when they select an image file so it can be resized.
 function cwscs_uploadImg() {
 	$upload_dir_paths = wp_upload_dir();
 	$baseurl = $upload_dir_paths['baseurl'];
@@ -994,25 +1002,27 @@ function cwscs_uploadImg() {
 	$file_name = "image_data";
 	$msg = "";
 	$status = 1;
-	$allowed = array("image/gif", "image/jpeg", "image/png", "image/x-png", "image/pjpeg");
+	$allowed = array("image/jpeg", "image/pjpeg");
 	$img = "";
-	if (isset($_POST['tmpfilename']) && $_POST['tmpfilename'] != "")
+	if (isset($_POST['tmpfilename']) && $_POST['tmpfilename'] != "") {
 		$tmpfilename = sanitize_text_field($_POST['tmpfilename']);
-	else
+		
+	} else
 		$tmpfilename = 'newimg-'.date("Ymdhis").'.jpg';
+	
 	if ($_FILES[$file_name]['error'] === UPLOAD_ERR_OK) {
-		if ($_FILES[$file_name]['name'] != "") {	
-			$type = sanitize_text_field($_FILES[$file_name]['type']);
+		// first check on filetype
+		$type = sanitize_text_field($_FILES[$file_name]['type']);
+		$mime = wp_get_image_mime($_FILES[$file_name]["tmp_name"]);
+		$fileInfo = @getimagesize($_FILES[$file_name]['tmp_name']);
+		if ($_FILES[$file_name]['name'] != "" && in_array($type, $allowed) && in_array($mime, $allowed) && in_array($fileInfo['mime'], $allowed) && $fileInfo[0] > 0) {
 			$size = sanitize_text_field($_FILES[$file_name]['size']);
-			if (!in_array($type, $allowed)) {
-				$msg .= '<p class="failmsg">Cannot load image #'.esc_html($i).", since it is a ".esc_html($type).'. We can only accept image files. </p>';
-				$status = 0;
-			} elseif ($_FILES[$file_name]['size'] > 10000000) {
-				$msg .= '<p class="failmsg">Image #'.esc_html($i).' is too big! Can accept images that are bigger than 10Mb. This one is '.esc_html($size).' bytes. </p>';
+			if ($_FILES[$file_name]['size'] > 10000000) {
+				$msg .= 'Image is too big! Can accept images that are bigger than 10Mb. This one is '.esc_html($size).' bytes.';
 				$status = 0;
 			} else {
-				// Can we upload it?
 				$tmpfilename = str_replace("%20","_",$tmpfilename);
+				$tmpfilename = str_replace(" ","_",$tmpfilename);
 				$partimgurl = $baseurl.'/'.date("Y").'/'.date("m").'/'.$tmpfilename;
 				$fullimgurl = $basedir.'/'.date("Y").'/'.date("m").'/'.$tmpfilename;
 				// move the image and return the image name
@@ -1025,7 +1035,11 @@ function cwscs_uploadImg() {
 					$img = "";
 				}
 			} // END upload
-		} // END name is not blank
+		} // passed checks
+		else {
+			$status = 0;
+			$msg = "Could not upload since this is not an image file. ";
+		}
 	} // no error
 	else {
 		$msg = 'Could not upload image file.';

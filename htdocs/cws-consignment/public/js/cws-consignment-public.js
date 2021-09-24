@@ -12,10 +12,10 @@
 					var this2 = this;                      //use in callback
 					$.post(my_ajax_obj.ajax_url, {         //POST request
 						action: "cwscs_ajax_add_item",
+						security: my_ajax_obj.nonce,
 						thiscat: $('#item_cat').val(), 		// data
 						thistask: "getcatprices"
 					}, function(results) {                    //callback
-						console.log(JSON.stringify(results), results.status);
 						if (!results) {
 							$('#catprices').html("Could not fetch at this time.");
 							console.log('Could not fetch');
@@ -78,7 +78,7 @@ function showCatPrices(data) {
 	return ct;
 }
 
-// NEW Handle images
+// When user clicks on an image this is run to resize the image first
 window.uploadPhotos = function(){
     // Read in file
     var file = event.target.files[0];
@@ -153,10 +153,7 @@ var dataURLToBlob = function(dataURL) {
 /* End Utility function to convert a canvas to a BLOB      */
 /* Handle image resized events */
 jQuery(document).on("imageResized", function (event) {
-	console.log('here and event ', event.blob); 
     if (event.blob && event.url && event.thisid) {
-		console.log ("TEST: resized at " + event.blob.size + ', type is ' + event.blob.type + ', tmpfilename: ' + jQuery('#tmpfilename').val());
-		//var objectURL = (URL || webkitURL).createObjectURL(event.blob);	
 		var this2 = this;                      //use in callback
 		var formdata = false;
 		if (window.FormData) {
@@ -167,8 +164,8 @@ jQuery(document).on("imageResized", function (event) {
 		} else {
 			console.log("FormData not supported")
 		}
-		console.log('Formdata is now ' + typeof formdata, formdata);
         formdata.append("action", "cwscs_ajax_add_item");
+		formdata.append("security", my_ajax_obj.nonce);
 		formdata.append("thistask", "uploadimage");
 		formdata.append('image_data', event.blob);
 		formdata.append('tmpfilename', jQuery('#tmpfilename').val());
@@ -204,21 +201,20 @@ jQuery(document).on("imageResized", function (event) {
 				if (!results) {
 					jQuery('#cwscs_errormsg').html("Could not upload the image at this time.");
 					jQuery('#cwscs_errormsg').removeClass("hidden");
-					console.log('TEST: no results');
 				} else if (results.status) {
-					console.log('In here and ' + results.status);
 					if (results.status == 0) { // error
-						jQuery('#cwscs_errormsg').html("There was an error.");
+						if (results.msg && results.msg != "") {
+							jQuery('#cwscs_errormsg').html(results.msg);
+						} else {
+							jQuery('#cwscs_errormsg').html("There was an error.");
+						}
 						jQuery('#cwscs_errormsg').removeClass("hidden");
-						console.log("status is 0");
 					} else {
-						console.log('TEST: good results, ' + typeof results.data.partimgurl);
 						if (results.data && results.data.partimgurl) {
 							console.log('populating filename');
 							var thisid = event.thisid;
 							var el = thisid.replace("image", "filename");
 							jQuery('#' + el).val(results.data.partimgurl);
-							console.log('# + ' + el + ' set to ' + results.data.partimgurl);
 							// show on form
 							var el = thisid.replace("image", "tmp-img");
 							jQuery('#' + el).attr("src", results.data.partimgurl);

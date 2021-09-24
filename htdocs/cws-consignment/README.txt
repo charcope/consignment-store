@@ -4,8 +4,8 @@ Donate link: https://charlenesweb.ca/donate/
 Tags: consignment store, consignment for WooCommerce
 Requires at least: 5.3
 Requires PHP: 5.6.20
-Tested up to: 5.8
-Stable tag: 1.0.0
+Tested up to: 5.8.1
+Stable tag: 1.2.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,18 +71,28 @@ I have seen this on Microsoft Edge when there is a security plugin such as WordF
 
 1. Add Item Form
 2. Review Submitted Items
-3. Master Inventory
-4. Manage Payouts
-5. Settings
-6. Reports
-7. Documentation
+3. Manage Payouts
+4. Settings
+5. Documentation
 
 == Changelog ==
+
+= 1.2 =
+* File verification at upload and attach
+
+= 1.1 =
+* Add more file verification
 
 = 1.0 =
 * First release
 
 == Upgrade Notice ==
+
+= 1.2 =
+This version fixes a security related bug.  Upgrade immediately.
+
+= 1.1 =
+This version fixes a security related bug.  Upgrade immediately.
 
 = 1.0 =
 Initial release

@@ -2,10 +2,10 @@
 Contributors: charcope
 Donate link: https://charlenesweb.ca/donate/
 Tags: consignment store, consignment for WooCommerce
-Requires at least: 5.3
-Requires PHP: 5.6.20
-Tested up to: 5.8.1
-Stable tag: 1.2.0
+Requires at least: 5.8
+Requires PHP: 7.3
+Tested up to: 5.9
+Stable tag: 1.3.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -77,6 +77,9 @@ I have seen this on Microsoft Edge when there is a security plugin such as WordF
 
 == Changelog ==
 
+= 1.3 =
+* Validate works with WordPress 5.9
+
 = 1.2 =
 * File verification at upload and attach
 
@@ -87,6 +90,9 @@ I have seen this on Microsoft Edge when there is a security plugin such as WordF
 * First release
 
 == Upgrade Notice ==
+
+= 1.3 =
+Reviewed WordPress 5.9 changes. No changes required to plugin. Upgrade at your convenience.
 
 = 1.2 =
 This version fixes a security related bug.  Upgrade immediately.

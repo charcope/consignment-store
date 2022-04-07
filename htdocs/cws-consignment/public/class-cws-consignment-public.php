@@ -1005,7 +1005,7 @@ function cwscs_uploadImg() {
 	$allowed = array("image/jpeg", "image/pjpeg");
 	$img = "";
 	if (isset($_POST['tmpfilename']) && $_POST['tmpfilename'] != "") {
-		$tmpfilename = sanitize_text_field($_POST['tmpfilename']);
+		$tmpfilename = sanitize_file_name($_POST['tmpfilename']); // replaces whitespace with dashes
 		
 	} else
 		$tmpfilename = 'newimg-'.date("Ymdhis").'.jpg';
@@ -1016,13 +1016,13 @@ function cwscs_uploadImg() {
 		$mime = wp_get_image_mime($_FILES[$file_name]["tmp_name"]);
 		$fileInfo = @getimagesize($_FILES[$file_name]['tmp_name']);
 		if ($_FILES[$file_name]['name'] != "" && in_array($type, $allowed) && in_array($mime, $allowed) && in_array($fileInfo['mime'], $allowed) && $fileInfo[0] > 0) {
+			$max_upload_size = wp_max_upload_size(); // Returns integer number.
 			$size = sanitize_text_field($_FILES[$file_name]['size']);
-			if ($_FILES[$file_name]['size'] > 10000000) {
-				$msg .= 'Image is too big! Can accept images that are bigger than 10Mb. This one is '.esc_html($size).' bytes.';
+			if ($_FILES[$file_name]['size'] > $max_upload_size) {
+				$msg .= 'Image is too big! Can accept images that are bigger than '.esc_html($max_upload_size).'. This one is '.esc_html($size).' bytes.';
 				$status = 0;
 			} else {
-				$tmpfilename = str_replace("%20","_",$tmpfilename);
-				$tmpfilename = str_replace(" ","_",$tmpfilename);
+				$tmpfilename = str_replace("%20","-",$tmpfilename);
 				$partimgurl = $baseurl.'/'.date("Y").'/'.date("m").'/'.$tmpfilename;
 				$fullimgurl = $basedir.'/'.date("Y").'/'.date("m").'/'.$tmpfilename;
 				// move the image and return the image name

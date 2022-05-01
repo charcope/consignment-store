@@ -99,6 +99,7 @@ form.cwscs_form .email-msg textarea {
 }
 
 #policy, #catprices {
+	margin:8px 0 16px 0;
     background: #eee;
     padding: 8px;
     border: 1px solid #ccc;

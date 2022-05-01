@@ -139,6 +139,7 @@ class cws_consignment_Public {
 	 */
 	public function init_shortcodes() {
 		add_shortcode( 'additemform', array($this, 'additemform_func') );
+		add_shortcode( 'cwscs_testapi', array($this, 'cwscs_testapi_func') );
 		add_action( 'wp_ajax_cwscs_ajax_add_item', array( $this, 'cwscs_ajax_add_item' ), 20 );
 		add_action( 'wp_ajax_nopriv_cwscs_ajax_add_item', array( $this, 'cwscs_ajax_add_item' ), 20 );
 	}
@@ -275,50 +276,7 @@ class cws_consignment_Public {
 			if ($results['status'] == 0) {
 				$ct .= '<p class="failmsg">'.esc_html($results['error']).'</p>';
 			} else {
-				// any image files to handle?
-				require_once( ABSPATH . 'wp-admin/includes/image.php' );
-				require_once( ABSPATH . 'wp-admin/includes/file.php' );
-				require_once( ABSPATH . 'wp-admin/includes/media.php' );
-				$attachments = array();
-				$allowed = array("image/jpeg", "image/png", "image/x-png", "image/pjpeg");
-				$allowedExt = array("gif", "jpeg", "png", "jpg");
-				for ($i=1; $i<=4; $i++) {
-					$imagename = "filename".$i;
-					if ($_POST[$imagename] != "") {
-						// getimagesize and other validations done in cwscs_uploadImg which does the actual upload as an ajax function. This is just the file url being saved here. Run a validation before attaching.
-						$fileInfo = wp_check_filetype($_POST[$imagename], null);
-						
-						if (in_array($fileInfo['ext'], $allowedExt) && in_array($fileInfo['type'], $allowed)) {
-							$fn = sanitize_text_field($_POST[$imagename]);
-							$attachment_title  = str_replace($baseurl.'/'.date("Y/m").'/', "", $fn); // just the file name
-							$file_path = str_replace($baseurl, $basedir, $fn);
-							// The ID of the post this attachment is for.
-							$parent_post_id = 0;
-							$post_info = array(
-								'guid'           => $fn,
-								'post_mime_type' => $fileInfo['type'],
-								'post_title'     => $attachment_title,
-								'post_content'   => '',
-								'post_status'    => 'inherit',
-							);
-							
-							$attachment_id = wp_insert_attachment( $post_info, $file_path, $parent_post_id );
-							if (!isset( $attachment_id) || $attachment_id == 0) {
-								$msg .= '<p class="failmsg">There was an error adding image.</p>';
-							} else {
-								$attachments[] = $attachment_id;
-								$attach_data = wp_generate_attachment_metadata( $attachment_id, $file_path );
-								$ok = wp_update_attachment_metadata( $attachment_id,  $attach_data );
-								if (!$ok)
-									$msg .= '<p class="failmsg">There was an error attaching the image.</p>';
-								// remove extra images
-								$msg .= cwscsRemoveExtraImages($attachment_id);
-							}
-						} else
-							$msg .= '<p class="failmsg">Image submitted was not an image file.</p>';
-					} // END there was an image
-				} // END loop on 4 images
-				// if all still good then add to database
+				// First add to inventory table and return insert id
 				if ($msg == "" && $results['status'] == 1)
 					$insert_id = cwscsAddItem($_POST, $attachments);
 				else {
@@ -326,17 +284,56 @@ class cws_consignment_Public {
 						$msg .= '<p class="failmsg">'.esc_html($results['error']).'</p>';
 					$insert_id = -1;
 				}
+			
+				$max_upload_size = wp_max_upload_size();
+				require_once( ABSPATH . 'wp-admin/includes/image.php' );
+				require_once( ABSPATH . 'wp-admin/includes/file.php' );
+				require_once( ABSPATH . 'wp-admin/includes/media.php' );
+				$attachments = array();
+				$allowed = array("image/jpeg", "image/png", "image/x-png", "image/pjpeg");
+				$allowedExt = array("gif", "jpeg", "png", "jpg");
+				for ($i=1; $i<=4; $i++) {
+					$status = 1;
+					$imagename = "image".$i;
+					if (isset($_FILES[$imagename]) && $_FILES[$imagename]['size'] > 0 && $_FILES[$imagename]['error'] === UPLOAD_ERR_OK) {
+						// first check on filetype
+						$type = sanitize_text_field($_FILES[$imagename]['type']);
+						$mime = wp_get_image_mime($_FILES[$imagename]["tmp_name"]);
+						$fileInfo = @getimagesize($_FILES[$imagename]['tmp_name']);
+						if ($_FILES[$imagename]['name'] != "" && in_array($type, $allowed) && in_array($mime, $allowed) && in_array($fileInfo['mime'], $allowed) && $fileInfo[0] > 0) {
+							$size = sanitize_text_field($_FILES[$imagename]['size']);
+							if ($_FILES[$imagename]['size'] > $max_upload_size) {
+								$msg .= '<p class="failmsg">Image is too big! Can accept images that are bigger than '.esc_html($max_upload_size).'. This one is '.esc_html($size).' bytes.</p>';
+								$status = 0;
+							}
+							if ($status == 1) {
+								$attachment_id = media_handle_upload($imagename, 0);
+								if (!isset( $attachment_id) || $attachment_id == 0) {
+									$msg .= '<p class="failmsg">There was an error adding image.</p>';
+								} else {
+									$attachments[] = $attachment_id;
+									$msg .= cwscsRemoveExtraImages($attachment_id);
+								}
+							}
+						} else {
+							$msg .= '<p class="failmsg">Image submitted was not an image file.</p>';
+						}
+					} // END there was an image
+				} // END loop on 4 images
 						
 				if ($insert_id >= 0) { // fail so show msg and show form
 					if (!$admin) {
 						$msg .= '<p class="successmsg">Your item has been submitted. Once your item has been reviewed, we will be in touch! You can scroll down to add another item. <br />Please don&rsquo;t refresh! That will resubmit your item. ';
-					} else {
-						$msg .= '<p class="successmsg">The item has been saved to the store. You can scroll down to add another item. Please don&rsquo;t refresh! That will resubmit your item. ';
 					}
 					$msg  .= '</p>';
 					if ($admin) {
 						// added to pending inventory successfully. Now add to woocommerce
-						$result = cwscsAddItemToWC($_POST, $attachments, "publish"); // will be the post id if successful
+						$result = cwscsAddItemToWC($_POST, $attachments, "publish");
+						if ($result > 0) {
+							$msg .= '<p class="successmsg">Your item '.$_POST['sku'].' has been saved to the store. You can scroll down to add another item. Please don&rsquo;t refresh! That will resubmit your item. T</p>';
+						} else {
+							$msg .= '<p class="failmsg">Your item '.$_POST['sku'].' was not saved to the store. There was an error: '.$result.'</p>';
+						}
 					}
 				} // END was added
 			
@@ -414,7 +411,7 @@ class cws_consignment_Public {
 					<label for "item_retail">Retail Price <span>How much does this item sell for in the store, brand new? </span></label>
 					<input type="text" id="item_retail" name="item_retail" maxlength=8 placeholder="$" required />
 				</p>
-				<p><a href="javascript:void(0);" data-divid="catprices" class="toggledivbyid showcatprices"><span class="dashicons dashicons-visibility"></span> View average sale prices in the store to help you set a price.</a></p>
+				<p id="pshowcatprices" style="display:none;"><a href="javascript:void(0);" data-divid="catprices" class="toggledivbyid showcatprices"><span class="dashicons dashicons-visibility"></span> View average sale prices in the store to help you set a price.</a></p>
 				<div id="catprices" class="hidden"></div>
 				<p id="p-item_sale">
 					<label for "item_sale">Sale Price 
@@ -444,24 +441,12 @@ class cws_consignment_Public {
 					</label>
 				</p>
 				<p id="p-item_images">
-					<label for "item_images">Add Up To 4 Images <span>Include pictures with different angles and details. Your images should be at least 300px wide or tall, and no more that 2MB in size. </span></label>
-					<input type="file" id="image1" accept="image/*" onchange="uploadPhotos()" /><br />
-					<input type="file" id="image2" accept="image/*" onchange="uploadPhotos()" /><br />
-					<input type="file" id="image3" accept="image/*" onchange="uploadPhotos()" /><br />
-					<input type="file" id="image4" accept="image/*" onchange="uploadPhotos()" /><br />
-					<input type="hidden" id="filename1" name="filename1" value="" />
-					<input type="hidden" id="filename2" name="filename2" value="" />
-					<input type="hidden" id="filename3" name="filename3" value="" />
-					<input type="hidden" id="filename4" name="filename4" value="" />
-					<input type="hidden" id="tmpfilename" name="tmpfilename" value="" />
+					<label for "item_images">Add Up To 4 Images <span>Include pictures with different angles and details. Your images should be at least 300px wide or tall, and no more than '.number_format($maxSize,1).' MB in size. </span></label>
+					<input type="file" id="image1" name="image1" accept="image/*" /><br />
+					<input type="file" id="image2" name="image2" accept="image/*" /><br />
+					<input type="file" id="image3" name="image3" accept="image/*" /><br />
+					<input type="file" id="image4" name="image4" accept="image/*" /><br />
 				</p>
-				<div>
-					<img id="tmp-img1" class="hidden" src="" style="max-width:200px; height:auto" />
-					<img id="tmp-img2" class="hidden" src="" style="max-width:200px; height:auto" />
-					<img id="tmp-img3" class="hidden" src="" style="max-width:200px; height:auto" />
-					<img id="tmp-img4" class="hidden" src="" style="max-width:200px; height:auto" />
-					<img id="mime-type1" class="hidden" src="" style="max-width:200px; height:auto" />
-				</div>
 				<p id="p-seller_name">';
 					if ($admin)
 						$ct .= '<label for "seller_name">What Is The Seller&rsquo;s Name?</label>';
@@ -476,7 +461,7 @@ class cws_consignment_Public {
 				else
 					$ct .= '<label for "phone">What Is Your Phone Number?</label>';
 				$ct .= '
-					<input type="text" id="phone" name="phone" maxlength=14 placeholder="" required />
+					<input type="text" id="phone" name="phone" maxlength=14 placeholder="" />
 				</p>
 				<p id="p-email">';
 				if ($admin)
@@ -563,6 +548,64 @@ class cws_consignment_Public {
 		return $ct;
 	}
 	
+	public function cwscs_testapi_func() {
+		global $wp;
+		$ct = "";
+		if (is_ssl())
+			$http = 'https';
+		else	
+			$http = 'http';
+		$current_url  = set_url_scheme($http.'://'.$_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_URL'] );
+		$subscriber = false; $editor = false; $loggedin = false; $admin = false; $author = false;
+		$msg = "";
+		$warn = "";
+		$name = "";
+		$email = "";
+		// get some info if they are logged in
+		if ( is_user_logged_in() ) {
+			// get roles
+			$loggedin = true;
+			global $current_user;
+			wp_get_current_user();
+			$user_id = $current_user->ID;
+			$roles = $current_user->roles;
+			$name = $current_user->display_name;  // for the form
+			$email = $current_user->user_email;
+			if (in_array("administrator", $roles)) {
+				$admin = true;
+			} elseif (in_array("subscriber", $roles))
+				$subscriber = true;
+			elseif (in_array("editor", $roles))
+				$editor = true;
+			elseif (in_array("author", $roles))
+				$author = true;
+			elseif (in_array("customer", $roles))
+				$customer = true;
+		}
+		$request = new WP_REST_Request( 'GET', '/wp/v2/posts' );
+		// Set one or more request query parameters
+		//$request->set_param( 'per_page', 20 );
+		//$request->set_param( '_envelope', 1 );
+		$response = rest_do_request( $request );
+		
+		$ct = '<h3>After call.</h3>';
+
+		if ( $response->is_error() ) {
+			// Convert to a WP_Error object.
+			$error = $response->as_error();
+			$message = $response->get_error_message();
+			$error_data = $response->get_error_data();
+			$status = isset( $error_data['status'] ) ? $error_data['status'] : 500;
+			wp_die( printf( '<p>An error occurred: %s (%d)</p>', $message, $error_data ) );
+		}
+		 
+		$data = $response->get_data();
+		$headers = $response->get_headers();
+		echo "<p>Success! Here's the data:</p>";
+		var_dump( $data );
+
+		return $ct;
+	}
 	
 } // END class cws_consignment_Public
 //////////////////////////////////////
@@ -723,7 +766,7 @@ function cwscsValidateAddItem($secret) {
 	$status = 1;
 	$error = "";
 	
-	$required = array('item_title'=>'Item Title', 'item_cat'=>'Category', 'item_retail'=>'Retail Price', 'item_sale'=>'Sale Price', 'seller_name'=>'Seller Name', 'phone'=>'Phone', 'email'=>'Email');
+	$required = array('item_title'=>'Item Title', 'item_cat'=>'Category', 'item_retail'=>'Retail Price', 'item_sale'=>'Sale Price', 'seller_name'=>'Seller Name', 'email'=>'Email');
 	foreach ($required as $key => $n) {
 		if (!isset($_POST[$key]) || $_POST[$key] == "") {
 			$error .= 'Please enter '.esc_html($n).'. ';
@@ -999,26 +1042,26 @@ function cwscs_uploadImg() {
 	$upload_dir_paths = wp_upload_dir();
 	$baseurl = $upload_dir_paths['baseurl'];
 	$basedir = $upload_dir_paths['basedir'];
-	$file_name = "image_data";
+	$imagename = "image_data";
 	$msg = "";
 	$status = 1;
 	$allowed = array("image/jpeg", "image/pjpeg");
 	$img = "";
 	if (isset($_POST['tmpfilename']) && $_POST['tmpfilename'] != "") {
-		$tmpfilename = sanitize_file_name($_POST['tmpfilename']); // replaces whitespace with dashes
+		$tmpfilename = sanitize_imagename($_POST['tmpfilename']); // replaces whitespace with dashes
 		
 	} else
 		$tmpfilename = 'newimg-'.date("Ymdhis").'.jpg';
 	
-	if ($_FILES[$file_name]['error'] === UPLOAD_ERR_OK) {
+	if ($_FILES[$imagename]['error'] === UPLOAD_ERR_OK) {
 		// first check on filetype
-		$type = sanitize_text_field($_FILES[$file_name]['type']);
-		$mime = wp_get_image_mime($_FILES[$file_name]["tmp_name"]);
-		$fileInfo = @getimagesize($_FILES[$file_name]['tmp_name']);
-		if ($_FILES[$file_name]['name'] != "" && in_array($type, $allowed) && in_array($mime, $allowed) && in_array($fileInfo['mime'], $allowed) && $fileInfo[0] > 0) {
+		$type = sanitize_text_field($_FILES[$imagename]['type']);
+		$mime = wp_get_image_mime($_FILES[$imagename]["tmp_name"]);
+		$fileInfo = @getimagesize($_FILES[$imagename]['tmp_name']);
+		if ($_FILES[$imagename]['name'] != "" && in_array($type, $allowed) && in_array($mime, $allowed) && in_array($fileInfo['mime'], $allowed) && $fileInfo[0] > 0) {
 			$max_upload_size = wp_max_upload_size(); // Returns integer number.
-			$size = sanitize_text_field($_FILES[$file_name]['size']);
-			if ($_FILES[$file_name]['size'] > $max_upload_size) {
+			$size = sanitize_text_field($_FILES[$imagename]['size']);
+			if ($_FILES[$imagename]['size'] > $max_upload_size) {
 				$msg .= 'Image is too big! Can accept images that are bigger than '.esc_html($max_upload_size).'. This one is '.esc_html($size).' bytes.';
 				$status = 0;
 			} else {
@@ -1026,7 +1069,7 @@ function cwscs_uploadImg() {
 				$partimgurl = $baseurl.'/'.date("Y").'/'.date("m").'/'.$tmpfilename;
 				$fullimgurl = $basedir.'/'.date("Y").'/'.date("m").'/'.$tmpfilename;
 				// move the image and return the image name
-				if (move_uploaded_file($_FILES[$file_name]['tmp_name'], $fullimgurl)) {
+				if (move_uploaded_file($_FILES[$imagename]['tmp_name'], $fullimgurl)) {
 					$msg .= 'Image has been uploaded to '.esc_html($fullimgurl).'. ';
 				} // END no errors in upload
 				else {

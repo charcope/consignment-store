@@ -97,8 +97,6 @@ class cws_consignment_Admin {
 	}
 	public function init_ajax() {
 		add_shortcode( 'additemform', array($this, 'additemform_func') );
-		add_action( 'wp_ajax_cwscs_save_settings', array( $this, 'cwscs_save_settings' ), 20 );
-		add_action( 'wp_ajax_nopriv_cwscs_save_settings', array( $this, 'cwscs_save_settings' ), 20 );
 	}
 	// Log errors
 	public function cwscsLogError($system, $file, $fcn, $url, $msg) {
@@ -165,16 +163,6 @@ class cws_consignment_Admin {
             array($this, 'cwscstop_settings_menu')
         );
 
-        /* Overview - report
-        $page_report_suffix = add_submenu_page(
-            'cws_cons_top_level',
-            __('Overview', 'cws-consignment'),
-            __('Reports', 'cws-consignment'),
-            'manage_options',
-            'cws_cons_reports',
-            array($this, 'cwscsreports_page')
-        );
-		*/
         // documentation
         $page_docs_suffix = add_submenu_page(
             'cws_cons_top_level',
@@ -318,12 +306,31 @@ class cws_consignment_Admin {
 				$http = 'https';
 			else	
 				$http = 'http';
-	
+			$msg = "";
 			$current_url  = set_url_scheme( 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_URL'] );
-		
+			// Form submitted?
+			if (isset($_POST['cwscs_key']) && $_POST['cwscs_key'] != "") {
+				$cwscs_key = sanitize_text_field($_POST['cwscs_key']);
+				if (isset($_POST['cwscs_value'])) // may be blank
+					$cwscs_value = sanitize_text_field($_POST['cwscs_value']);
+				else
+					$cwscs_value = "";
+				if (isset($_POST['method'])) // may be blank
+					$cwscs_method = sanitize_text_field($_POST['cwscs_method']);
+				else {
+					$cwscs_method = "";
+				}
+				$results = cwscsSaveSetting($cwscs_key, $cwscs_value); // sets status, msg
+				if ($results['status'] == 1) {
+					$msg = '<p class="successmsg">Changes have been saved.</p>';
+				} else {
+					$msg = '<p class="failmsg">Could not update. Please refresh and try again.</p>';
+				}
+			}
+
 			// Display functions
 			require_once plugin_dir_path( __FILE__ ) . 'partials/cws-consignment-admin-display.php';
-			cwscsShowSettingsMenu($current_url, $menu_slug);
+			cwscsShowSettingsMenu($current_url, $menu_slug, $msg);
 		} else
 			echo '<p class="failmsg">You are not authorized to be here. </p>';
 	}
@@ -334,55 +341,6 @@ class cws_consignment_Admin {
 		// Display functions
 		require_once plugin_dir_path( __FILE__ ) . 'partials/cws-consignment-admin-display.php';
 		cwscsShowDocsPage();
-	}
-	
-	// Handles my AJAX request.
-	public function cwscs_save_settings() {
-		// check referrer
-		check_ajax_referer( 'cwscs_doajax' );
-		// get post vars
-		if (isset($_POST['cwscs_key']))
-			$cwscs_key = sanitize_text_field($_POST['cwscs_key']);
-		else
-			$cwscs_key = "";
-		if (isset($_POST['cwscs_value'])) // may be blank
-			$cwscs_value = sanitize_text_field($_POST['cwscs_value']);
-		else
-			$cwscs_value = "";
-		if (isset($_POST['method'])) // may be blank
-			$method = sanitize_text_field($_POST['method']);
-		else {
-			$method = "";
-		}
-		$status = 1; // optimistic start
-		$results = cwscsSaveSetting($cwscs_key, $cwscs_value); // sets status, msg
-		// refetch the data
-		switch ($method) {
-			case "savecategories":
-				$data = cwscsGetCategoriesChecked();
-				break;
-			case "savepolicy":
-				$data = cwscsGetStorePolicy(); // gets storepolicyshow and storepolicytext
-				break;
-			case "savesplits":
-				$data = cwscsGetStoreSplitsChecked();
-				break;
-			case "saverecaptchav2":
-				$data = cwscsGetRecaptchas("recaptcha-v2");
-				break;
-			case "saverecaptchav3":
-				$data = cwscsGetRecaptchas("recaptcha-v3");
-				break;
-			case "saveemails":
-				$data = cwscsGetEmailSettings();
-				break;				
-			default:
-				$data = array();		
-		}
-		
-		$results['data'] = $data;
-		wp_send_json($results);
-		wp_die(); // All ajax handlers die when finished
 	}
 }
 //////////////////////////////////

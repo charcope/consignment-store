@@ -231,7 +231,7 @@ jQuery(document).on("imageResized", function (event) {
 		});
     }
 });
-// enable the submit button
+
 function cc_enableSubmitBtn() {
 	document.getElementById("cc_additem").disabled = false;
 }

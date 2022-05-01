@@ -274,7 +274,7 @@ function cwscsShowPaymentForm($current_url, $menu_slug, $item) {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Settings page
 ////////////////////////////////////////////////////////////////////////////////////////////
-function cwscsShowSettingsMenu($current_url, $menu_slug) {
+function cwscsShowSettingsMenu($current_url, $menu_slug, $msg) {
 	$tabs = array("General", "Categories", "Store Policy", "Store Splits", "Google reCAPTCHA v2", "Google reCAPTCHA v3", "Emails");
 	$icons = array("dashicons-admin-tools", "dashicons-category", "dashicons-edit", "dashicons-chart-pie", "dashicons-admin-generic", "dashicons-admin-generic", "dashicons-email-alt");
 	$content = cwscsGetSettingsContent();
@@ -303,8 +303,13 @@ function cwscsShowSettingsMenu($current_url, $menu_slug) {
 	// Save button
 	echo '
 	<div class="clear"></div>
+	<div id="cwscs_msg">'.$msg.'</div>
 	<div class="button-wrap">
-		<button class="button button-primary btn-save-settings" id="btnsave_1">Save Categories</button>
+	<form action="'.esc_html($current_url).'?page='.esc_html($menu_slug).'" method="post" id="cwscs_settings_form">
+		<input type="hidden" name="cwscs_key" id="cwscs_key" value="categories" />
+		<input type="hidden" name="cwscs_value" id="cwscs_value" value="" />
+		<input type="hidden" name="cwscs_method" id="cwscs_method" value="savecategories" />
+		<button type="button" class="button button-primary btn-save-settings" id="btnsave_1">Save Categories</button>
 	</div>';
 	// initialize
 	?>
@@ -328,9 +333,9 @@ function cwscsGetSettingsContent() {
 	$content[] = cwscsShowCategories($myPicks, $allPicks);
 	
 	// Store Policy
-	$storepolicyshow = cwscsGetSettingByKey("store-policy-show");
-	$storepolicytext = cwscsGetSettingByKey("store-policy-text");
-	$content[] = cwscsShowStorePolicy($storepolicyshow, $storepolicytext);
+	$storepolicy = cwscsGetSettingByKey("store-policy");
+	echo '<p>TEST: </p>'; print_r($storepolicy);
+	$content[] = cwscsShowStorePolicy($storepolicy);
 	
 	// Store Splits
 	$mySplits = cwscsGetSettingByKeyReturnArray("store-splits");
@@ -432,19 +437,30 @@ function cwscsShowCategories($myPicks, $allPicks) {
 	return $ct;
 }
 // Display the store policy for update
-function cwscsShowStorePolicy($storepolicyshow, $storepolicytext) {
+function cwscsShowStorePolicy($storepolicy) {
+	$status = 0;
+	$show = 0;
+	$text = "";
+	if ($storepolicy['status'] == 1 && $storepolicy['data'] != "") {
+		$status = 1;
+		$data_str = $storepolicy['data'];
+		$data = explode('::',  $data_str);
+		foreach ($data as $i => $d) {
+			if ($i == 0) {
+				$show = trim($d);
+			} elseif ($i == 1) {
+				$text = trim($d);
+			}
+		}
+	}
+
 	$ct = "<p>You may choose to show your store policy on the Add Item to Consignment Store Form on your website. If you do, the seller will have to accept the store policy. </p>";
-	// show if no settings yet or if set to 1
-	if ($storepolicyshow['status'] == 0 || $storepolicyshow['data'] == 1) {
-		$show = 1;
-	} else
-		$show = 0;
-	if (isset($storepolicytext['data']) && $storepolicytext['data']) {
-		$text = $storepolicytext['data'];
-	} else // default text
+
+	if ($text == "") {
 		$text = 
 		"Use this form to submit your items to the consignment store. If they are in good shape, clean and generally ready to sell then we will approve the item for the store, and split the proceeds of any sale 50/50.\r\n\r\nIf we do accept your item for the store, we will email you to let you know, and to determine a time for you to drop your item off.\r\n\r\nIf after 6 months in the store, the item has not sold, we may donate the item or let you know to come pick it up.";
-	// show form
+	}
+	
 	$ct .= '
 	<p>
 		<label class="radio" for="storepolicyshow">

@@ -72,11 +72,8 @@
 			var thisid = $(this).attr("id");
 			var cwscs_key = "";
 			var cwscs_value = "";
-			var method = "";
-			if (thisid == "btnsave_1")
-				console.log('TEST: match ' + thisid);
-			else
-				console.log('TEST: no match ' + thisid);
+			var cwscs_method = "";
+
 			switch (thisid) {
 				// first get data 
 				case "btnsave_1":
@@ -89,7 +86,7 @@
 					});
 					var cwscs_key = "categories";
 					var contentid = "contenttab_1";
-					var method = "savecategories";
+					var cwscs_method = "savecategories";
 					break;
 				case "btnsave_2":
 					// is the checkbox set?
@@ -101,7 +98,7 @@
 					cwscs_value += '::' + $('#storepolicytext').val();
 					var cwscs_key = "store-policy";
 					var contentid = "contenttab_2";
-					var method = "savepolicy";
+					var cwscs_method = "savepolicy";
 					break;
 				case "btnsave_3":
 					var conn = ""
@@ -113,18 +110,18 @@
 					});
 					var cwscs_key = "store-splits";
 					var contentid = "contenttab_3";
-					var method = "savesplits";
+					var cwscs_method = "savesplits";
 					break;
 				case "btnsave_4":
 				case "btnsave_5":
 					if (thisid == "btnsave_4") {
 						var ext = "v2";
 						var contentid = "contenttab_4";
-						var method = "saverecaptchav2";
+						var cwscs_method = "saverecaptchav2";
 					} else {
 						var ext = "v3";
 						var contentid = "contenttab_5";
-						var method = "saverecaptchav3";
+						var cwscs_method = "saverecaptchav3";
 					}
 					// allowed to set it to blank
 					if (typeof $('#cwscs_version' + ext).val() != "undefined" && typeof $('#cwscs_site_key' + ext).val() != "undefined" && typeof $('#cwscs_secret' + ext).val() != "undefined") {
@@ -137,7 +134,7 @@
 					break;
 				case "btnsave_6":
 					var contentid = "contenttab_6";
-					var method = "saveemails";
+					var cwscs_method = "saveemails";
 					var cwscs_key = "emails";
 					if ($('#cwscs_from_email').val() && $('#cwscs_to_email').val()) {
 						var cwscs_value = $('#cwscs_from_email').val() + '::' + $('#cwscs_to_email').val();
@@ -147,71 +144,25 @@
 					break;	
 				default:
 					console.log('TEST: not found');
-					var method = "";
+					var cwscs_method = "";
 					break;
 			}
 			console.log('TEST: at end and ' + cwscs_key);
 			if (cwscs_key == "") {
-				$('#' + contentid).html('<p class="failmsg">Could not update. Please refresh and try again.</p>');
+				$('#cwscs_msg').html('<p class="failmsg">Could not update. Please refresh and try again.</p>');
 				return;
 			}
-			// do the ajax call
-			var this2 = this;      	            //use in callback
-			$.post(my_ajax_obj.ajax_url, {      //POST request
-				action: "cwscs_save_settings",	// defined at class-cws-consignment-admin.php
-				cwscs_key: cwscs_key,
-				cwscs_value: cwscs_value,
-				method: method,
-			}, function(results) {              //callback
-				stopAdminSpinner();
-				if (!results) {
-					$('#' + contentid).html("Could not save settings at this time. Please refresh and try again.");
-				} else if (results.status == 0) { // error
-					if (results.msg && results.msg != "") {
-						$('#' + contentid).html('<p class="failmsg">' + results.msg + '</p>');
-					} else {
-						$('#' + contentid).html('<p class="failmsg">Sorry! There was an error saving the settings.</p>');
-					}
-					console.log("TEST: results, msg in #" + contentid, results);
-				} else {
-					console.log('TEST: good results');
-					switch (thisid) {
-						// show results
-						case "btnsave_1":
-							var ct = showCatSettings(results.data);
-							break;
-						case "btnsave_2":
-							var ct = showPolicySettings(results.data);
-							break;
-						case "btnsave_3":
-							var ct = showSplitSettings(results.data);
-							break;
-						case "btnsave_4":
-						case "btnsave_5":
-							var ct = showRecaptchaSettings(results.data);
-							break;
-						case "btnsave_6":
-							var ct = showEmailSettings(results.data);
-							break;		
-						default:
-							var ct = 'Content is here';
-							break;	
-					} // END switch
-					ct += '<p class="successmsg">Changes have been saved.</p>';
-					$('#' + contentid).html(ct);
-				} // END good results
-				// set display
-				/*
-				jQuery('#btntab_0').removeClass("active");
-				jQuery('#btntab_0').addClass("active");
-				jQuery('#contenttab_0').removeClass("cwshidden");
-				*/
-				console.log(JSON.stringify(results));
-			}); // END ajax call
+			$('#cwscs_key').val(cwscs_key);
+			$('#cwscs_value').val(cwscs_value);
+			$('#cwscs_method').val(cwscs_method);
+
+			// Submit the form
+			$('#cwscs_settings_form').submit();
 		}); // END btn-save-settings
 	});
 })( jQuery );
 // General stuff
+
 // show / hide email form 
 function showHideApproved(i) {
 	if (typeof i == "undefined") {

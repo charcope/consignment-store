@@ -331,7 +331,7 @@ class cws_consignment_Public {
 						// added to pending inventory successfully. Now add to woocommerce
 						$result = cwscsAddItemToWC($_POST, $attachments, "publish");
 						if ($result > 0) {
-							$msg .= '<p class="successmsg">Your item '.$_POST['sku'].' has been saved to the store. You can scroll down to add another item. Please don&rsquo;t refresh! That will resubmit your item. T</p>';
+							$msg .= '<p class="successmsg">Your item '.$_POST['sku'].' has been saved to the store. You can scroll down to add another item. Please don&rsquo;t refresh! That will resubmit your item.</p>';
 						} else {
 							$msg .= '<p class="failmsg">Your item '.$_POST['sku'].' was not saved to the store. There was an error: '.$result.'</p>';
 						}

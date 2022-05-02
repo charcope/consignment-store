@@ -16,7 +16,7 @@
  * Plugin Name:       Consignment Store for WooCommerce
  * Plugin URI:        https://charlenesweb.ca/
  * Description:       Consignment Store for WooCommerce
- * Version:           1.4.0
+ * Version:           1.5.0
  * Author:            Charlene's Web Services
  * Author URI:        https://charlenesweb.ca/plugins
  * License:           GPL-2.0+
@@ -33,7 +33,7 @@ if ( ! defined( 'WPINC' ) ) {
 /**
  * First release 1.0.0 and then using SemVer - https://semver.org X.Y.Z (Major.Minor.Patch)
  */
-define( 'CWS_CONSIGNMENT_VERSION', '1.4.0' );
+define( 'CWS_CONSIGNMENT_VERSION', '1.5.0' );
 define('CWSCS_SRC_DIR', dirname(__FILE__) );
 /**
  * The code that runs during plugin activation.

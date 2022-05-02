@@ -5,7 +5,7 @@ Tags: consignment store, consignment for WooCommerce
 Requires at least: 5.8
 Requires PHP: 7.3
 Tested up to: 5.9
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -77,6 +77,9 @@ I have seen this on Microsoft Edge when there is a security plugin such as WordF
 
 == Changelog ==
 
+= 1.5 =
+* Small formatting change
+
 = 1.4 =
 * Remove admin-ajax references since causing 403 errors
 
@@ -93,6 +96,9 @@ I have seen this on Microsoft Edge when there is a security plugin such as WordF
 * First release
 
 == Upgrade Notice ==
+
+= 1.5 =
+Small formatting change. Upgrade immediately. 
 
 = 1.4 =
 This version removes admin-ajax since was causing 403 errors with caching in plugins and in server settings. Upgrade immediately. 

@@ -253,7 +253,8 @@ class cws_consignment_Public {
 		
 		// get recaptcha settings - do here since need if submitted
 		$recaptcha = cwscsGetMyRecaptcha();
-			
+		$max_upload_size = wp_max_upload_size();
+		$displayMaxSize = $max_upload_size/1000000;
 		// Was additem form submitted?
 		if (isset($_POST['additem'])) {
 			// validate the form before doing anything
@@ -285,7 +286,7 @@ class cws_consignment_Public {
 					$insert_id = -1;
 				}
 			
-				$max_upload_size = wp_max_upload_size();
+				
 				require_once( ABSPATH . 'wp-admin/includes/image.php' );
 				require_once( ABSPATH . 'wp-admin/includes/file.php' );
 				require_once( ABSPATH . 'wp-admin/includes/media.php' );
@@ -441,7 +442,7 @@ class cws_consignment_Public {
 					</label>
 				</p>
 				<p id="p-item_images">
-					<label for "item_images">Add Up To 4 Images <span>Include pictures with different angles and details. Your images should be at least 300px wide or tall, and no more than '.number_format($maxSize,1).' MB in size. </span></label>
+					<label for "item_images">Add Up To 4 Images <span>Include pictures with different angles and details. Your images should be at least 300px wide or tall, and no more than '.number_format($displayMaxSize,1).' MB in size. </span></label>
 					<input type="file" id="image1" name="image1" accept="image/*" /><br />
 					<input type="file" id="image2" name="image2" accept="image/*" /><br />
 					<input type="file" id="image3" name="image3" accept="image/*" /><br />
@@ -1052,14 +1053,14 @@ function cwscs_uploadImg() {
 		
 	} else
 		$tmpfilename = 'newimg-'.date("Ymdhis").'.jpg';
-	
+	$max_upload_size = wp_max_upload_size();
 	if ($_FILES[$imagename]['error'] === UPLOAD_ERR_OK) {
 		// first check on filetype
 		$type = sanitize_text_field($_FILES[$imagename]['type']);
 		$mime = wp_get_image_mime($_FILES[$imagename]["tmp_name"]);
 		$fileInfo = @getimagesize($_FILES[$imagename]['tmp_name']);
 		if ($_FILES[$imagename]['name'] != "" && in_array($type, $allowed) && in_array($mime, $allowed) && in_array($fileInfo['mime'], $allowed) && $fileInfo[0] > 0) {
-			$max_upload_size = wp_max_upload_size(); // Returns integer number.
+			
 			$size = sanitize_text_field($_FILES[$imagename]['size']);
 			if ($_FILES[$imagename]['size'] > $max_upload_size) {
 				$msg .= 'Image is too big! Can accept images that are bigger than '.esc_html($max_upload_size).'. This one is '.esc_html($size).' bytes.';

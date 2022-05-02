@@ -334,7 +334,6 @@ function cwscsGetSettingsContent() {
 	
 	// Store Policy
 	$storepolicy = cwscsGetSettingByKey("store-policy");
-	echo '<p>TEST: </p>'; print_r($storepolicy);
 	$content[] = cwscsShowStorePolicy($storepolicy);
 	
 	// Store Splits

@@ -351,7 +351,7 @@ class cws_consignment_Admin {
 function cwscsGetInventory($approved) {
 	global $wpdb;
 	$prefix = $wpdb->prefix; 
-	$wpdb->show_errors();
+	$wpdb->hide_errors();
 	$ok = true;
 	
 	$results = array();
@@ -388,7 +388,7 @@ function cwscsGetInventory($approved) {
 function cwscsGetInventoryByID($id) {
 	global $wpdb;
 	$prefix = $wpdb->prefix; 
-	$wpdb->show_errors();
+	$wpdb->hide_errors();
 	
 	$results = 1;
 	if (isset($id) && $id > 0) {
@@ -409,7 +409,7 @@ function cwscsGetInventoryByID($id) {
 function cwscsGetInventoryBySKU($sku) {
 	global $wpdb;
 	$prefix = $wpdb->prefix; 
-	$wpdb->show_errors();
+	$wpdb->hide_errors();
 	$results = 1;
 	if (isset($sku) && $sku != "") {
 		$sku = sanitize_text_field($sku);
@@ -431,7 +431,7 @@ function cwscsGetInventoryBySKU($sku) {
 function cwscsGetInventoryByKw($search_kw) {
 	global $wpdb;
 	$prefix = $wpdb->prefix; 
-	$wpdb->show_errors();
+	$wpdb->hide_errors();
 	$results = array();
 	if ($search_kw != "") {
 		$search_kw = sanitize_text_field($search_kw);
@@ -452,7 +452,7 @@ function cwscsGetInventoryByKw($search_kw) {
 function cwscsGetInventorySold($show="unpaid", $search_sku="", $search_kw="") {
 	global $wpdb;
 	$prefix = $wpdb->prefix; 
-	$wpdb->show_errors();
+	$wpdb->hide_errors();
 	$results = array();
 	// figure out the where statement
 	$where = "WHERE approved=1";
@@ -504,7 +504,7 @@ function cwscsGetInventorySold($show="unpaid", $search_sku="", $search_kw="") {
 function cwscsApproveItem() {
 	global $wpdb;
 	$prefix = $wpdb->prefix; 
-	$wpdb->show_errors();
+	$wpdb->hide_errors();
 	$ok = true;
 	$url = get_site_url();
 	$_POST['item_id'] = intval($_POST['item_id']);
@@ -576,7 +576,7 @@ function cwscsApproveItem() {
 function cwscsRejectItem() {
 	global $wpdb;
 	$prefix = $wpdb->prefix; 
-	$wpdb->show_errors();
+	$wpdb->hide_errors();
 	$ok = true;
 	$url = get_site_url();
 	$headers="From: no-reply@".$url."\r\n";
@@ -633,7 +633,7 @@ function cwscsRejectItem() {
 function cwscsSavePayment() {
 	global $wpdb;
 	$prefix = $wpdb->prefix;
-	$wpdb->show_errors();
+	$wpdb->hide_errors();
 	$ok = true;
 	$url = get_site_url();
 	$_POST['item_id'] = intval($_POST['item_id']);
@@ -667,7 +667,7 @@ function cwscsGetSettingByKey($key) {
 	global $wpdb;
 	$prefix = $wpdb->prefix;
 	$table = "cwscs_settings";
-	$wpdb->show_errors();
+	$wpdb->hide_errors();
 
 	if ($key == "") {
 		$results = array("status"=>0, "msg"=>'Please enter a valid key for the settings table.');
@@ -707,7 +707,7 @@ function cwscsSaveSetting($cwscs_key, $cwscs_value) {
 	global $wpdb;
 	$prefix = $wpdb->prefix;
 	$table = "cwscs_settings";
-	$wpdb->show_errors();
+	$wpdb->hide_errors();
 	$msg = "";
 	$status = 1;
 	
@@ -869,7 +869,7 @@ function cwscsGetWooBySkuAdmin($sku) {
 	global $wpdb;
 	$prefix = $wpdb->prefix; 
 	$results = array();
-	$wpdb->show_errors();
+	$wpdb->hide_errors();
 	// get post id
 	$sku = sanitize_text_field($sku);
 	$pms = $wpdb->get_results( 'SELECT post_id FROM '.$prefix.'postmeta WHERE meta_key="_sku" AND meta_value="'.$sku.'"' ); 

@@ -620,7 +620,7 @@ function cwscsGetCategories() {
 	global $wpdb;
 	$prefix = $wpdb->prefix; 
 	$results = array();
-	$wpdb->show_errors();
+	$wpdb->hide_errors();
 	$cats = $wpdb->get_results( 'SELECT '.$prefix.'term_taxonomy.term_id, name FROM '.$prefix.'term_taxonomy, '.$prefix.'terms WHERE '.$prefix.'term_taxonomy.term_id='.$prefix.'terms.term_id AND taxonomy="product_cat" order by '.$prefix.'terms.name' ); 
 	if (is_object($cats) || is_array($cats)) {
 		foreach ($cats as $i => $obj) {
@@ -649,7 +649,7 @@ function cwscsGetPricesByCategory($cats) {
 	global $wpdb;
 	$prefix = $wpdb->prefix; 
 	$results = array();
-	$wpdb->show_errors();
+	$wpdb->hide_errors();
 	$ctr_r = 0;
 	foreach ($cats as $i => $cat) {
 		if (isset($cat->term_id) && $cat->term_id > 0) {
@@ -981,7 +981,7 @@ function cwscsGetWooBySku($sku) {
 	global $wpdb;
 	$prefix = $wpdb->prefix; 
 	$results = array();
-	$wpdb->show_errors();
+	$wpdb->hide_errors();
 	// get post id
 	$pms = $wpdb->get_results( 'SELECT post_id FROM '.$prefix.'postmeta WHERE meta_key="_sku" AND meta_value="'.sanitize_text_field($sku).'"' ); 
 	$post_id = 0;

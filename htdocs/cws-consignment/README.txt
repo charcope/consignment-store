@@ -5,7 +5,7 @@ Tags: consignment store, consignment for WooCommerce
 Requires at least: 5.8
 Requires PHP: 7.3
 Tested up to: 5.9
-Stable tag: 1.5.1
+Stable tag: 1.5.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -77,6 +77,9 @@ I have seen this on Microsoft Edge when there is a security plugin such as WordF
 
 == Changelog ==
 
+= 1.5.2 =
+* Remove debug message
+
 = 1.5.1 =
 * Spelling error
 
@@ -99,6 +102,9 @@ I have seen this on Microsoft Edge when there is a security plugin such as WordF
 * First release
 
 == Upgrade Notice ==
+
+= 1.5.2 =
+Remove a debug message. Upgrade at your convenience. 
 
 = 1.5.1 =
 Spelling error. Upgrade at your convenience. 

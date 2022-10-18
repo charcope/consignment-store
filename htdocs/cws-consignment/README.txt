@@ -5,7 +5,7 @@ Tags: consignment store, consignment for WooCommerce
 Requires at least: 5.8
 Requires PHP: 7.3
 Tested up to: 6.0
-Stable tag: 1.5.2
+Stable tag: 1.7
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -76,6 +76,11 @@ I have seen this on Microsoft Edge when there is a security plugin such as WordF
 5. Documentation
 
 == Changelog ==
+= 1.7 =
+* Feature add: added more Store Split options
+
+= 1.6 =
+* Feature add: added 0/100 as an option for the split (100% to seller)
 
 = 1.5.2 =
 * Remove debug message
@@ -102,6 +107,11 @@ I have seen this on Microsoft Edge when there is a security plugin such as WordF
 * First release
 
 == Upgrade Notice ==
+= 1.7 =
+* Feature add: added more Store Split options
+
+= 1.6 =
+Feature add. Upgrade at your convenience. 
 
 = 1.5.2 =
 Remove a debug message. Upgrade at your convenience. 

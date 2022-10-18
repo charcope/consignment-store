@@ -1035,7 +1035,12 @@ function cwscsShowItemSummary() {
 // used in both admin and public -- get all possible splits 
 // currently hardcoded. May put in admin later
 function cwscsGetAllSplits() {
-	$splits = array(50=>'50 / 50 (default)', 100=>"100 if donated");
+	$splits = array(50=>'50 / 50 (default)', 
+					100=>"100 for store / 0 to seller (donated item)", 
+					75=>"75% for store / 25% to seller",
+					25=>"25% for store / 75% to seller",
+					0=>"0 / 100% to Seller"
+				);
 	return $splits;
 }
 // handle the image upload from the ajax function - the form does not actually upload a file on submit. It is done when they select an image file so it can be resized.

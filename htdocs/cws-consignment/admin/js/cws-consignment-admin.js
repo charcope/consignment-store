@@ -235,7 +235,7 @@ function showPolicySettings(data) {
 function showSplitSettings(data) {
 	var ct = '<h3>Store Splits</h3>';
 	if (data) {
-		ct += '<p>Click which splits to include in the Add Item to Consignment Store Form on the website. The store splits are only available to the Administrators to set.</p>';
+		ct += '<p>Click which splits to include in the Add Item to Consignment Store Form on the website. </p>';
 		for (var splitid in data) {
 			if (typeof data[splitid].name != "undefined") {
 				var name = data[splitid].name;

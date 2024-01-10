@@ -273,7 +273,7 @@ class cws_consignment_Public {
 				$ok = false;
 			} else
 				$results = cwscsValidateAddItem($secret);
-				
+			$attachments = array();	
 			if ($results['status'] == 0) {
 				$ct .= '<p class="failmsg">'.esc_html($results['error']).'</p>';
 			} else {
@@ -290,7 +290,7 @@ class cws_consignment_Public {
 				require_once( ABSPATH . 'wp-admin/includes/image.php' );
 				require_once( ABSPATH . 'wp-admin/includes/file.php' );
 				require_once( ABSPATH . 'wp-admin/includes/media.php' );
-				$attachments = array();
+				
 				$allowed = array("image/jpeg", "image/png", "image/x-png", "image/pjpeg");
 				$allowedExt = array("gif", "jpeg", "png", "jpg");
 				for ($i=1; $i<=4; $i++) {

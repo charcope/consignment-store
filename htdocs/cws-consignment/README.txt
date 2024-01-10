@@ -5,7 +5,7 @@ Tags: consignment store, consignment for WooCommerce
 Requires at least: 5.8
 Requires PHP: 7.3
 Tested up to: 6.0
-Stable tag: 1.7.1
+Stable tag: 1.7.2
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -76,6 +76,9 @@ I have seen this on Microsoft Edge when there is a security plugin such as WordF
 5. Documentation
 
 == Changelog ==
+= 1.7.2 =
+* Fix for PHP 8
+
 = 1.7.1 =
 * Update version number
 
@@ -110,6 +113,9 @@ I have seen this on Microsoft Edge when there is a security plugin such as WordF
 * First release
 
 == Upgrade Notice ==
+= 1.7.2 =
+* Fix for PHP 8
+
 = 1.7.1 =
 * Update version number
 

@@ -273,7 +273,7 @@ class cws_consignment_Public {
 				$ok = false;
 			} else
 				$results = cwscsValidateAddItem($secret);
-			$attachments = array();	
+				$attachments = array();	
 			if ($results['status'] == 0) {
 				$ct .= '<p class="failmsg">'.esc_html($results['error']).'</p>';
 			} else {

@@ -183,11 +183,7 @@ class cws_consignment_Admin {
 			
 			// initialize vars
 			$menu_slug = "cws_cons_top_level";
-			if (is_ssl())
-				$http = 'https';
-			else	
-				$http = 'http';
-			$current_url = set_url_scheme( 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_URL'] );
+
 			// get roles
 			global $current_user;
 			wp_get_current_user();
@@ -223,7 +219,7 @@ class cws_consignment_Admin {
 							// show item details, all images and the approve/reject form
 							foreach ($results as $i => $row) {
 								if ($row->ID == intval($clean_item_id)) {
-									showApproveRejectForm($current_url, $menu_slug, $row);
+									showApproveRejectForm($menu_slug, $row);
 									$found = true;
 								}
 							}
@@ -236,7 +232,7 @@ class cws_consignment_Admin {
 				} else
 					$results = cwscsGetInventory(0); // get all submitted, not approved items
 					
-				cwscsShowSubmittedPage($current_url, $menu_slug, $results); // will display form
+				cwscsShowSubmittedPage($menu_slug, $results); // will display form
 			} else {
 				echo '<p class="failmsg">You are not authorized to be here. </p>';
 			}
@@ -251,12 +247,6 @@ class cws_consignment_Admin {
 			<p>Below is the list of items that were submitted to the consignment store and have now been sold. Record payments to the sellers here.</p>';
 			// initialize vars
 			$menu_slug = "cws_cons_payments";
-			if (is_ssl())
-				$http = 'https';
-			else	
-				$http = 'http';
-	
-			$current_url  = set_url_scheme( 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_URL'] );
 		
 			// Display functions
 			require_once plugin_dir_path( __FILE__ ) . 'partials/cws-consignment-admin-display.php';
@@ -282,7 +272,7 @@ class cws_consignment_Admin {
 				} else { 
 					// fetch the item
 					$item = cwscsGetInventoryByID(sanitize_text_field($_POST['item_id']));
-					cwscsShowPaymentForm($current_url, $menu_slug, $item);
+					cwscsShowPaymentForm($menu_slug, $item);
 					// show the form to save a payment, show any payment so far
 				} // END show form
 			} // END form submitted
@@ -290,7 +280,7 @@ class cws_consignment_Admin {
 			// Get the data
 			$results = cwscsGetInventorySold($show, $search_sku, $search_kw);	
 			// Show the data
-			cwscsShowPayoutsPage($current_url, $menu_slug, $search_sku, $search_kw, $show, $results);
+			cwscsShowPayoutsPage($menu_slug, $search_sku, $search_kw, $show, $results);
 		} // END is logged in
 		else
 			echo '<p class="failmsg">You are not authorized to be here. </p>';
@@ -302,12 +292,7 @@ class cws_consignment_Admin {
 
 			// initialize vars
 			$menu_slug = "cwscs_app_settings";
-			if (is_ssl())
-				$http = 'https';
-			else	
-				$http = 'http';
 			$msg = "";
-			$current_url  = set_url_scheme( 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_URL'] );
 			// Form submitted?
 			if (isset($_POST['cwscs_key']) && $_POST['cwscs_key'] != "") {
 				$cwscs_key = sanitize_text_field($_POST['cwscs_key']);
@@ -330,7 +315,7 @@ class cws_consignment_Admin {
 
 			// Display functions
 			require_once plugin_dir_path( __FILE__ ) . 'partials/cws-consignment-admin-display.php';
-			cwscsShowSettingsMenu($current_url, $menu_slug, $msg);
+			cwscsShowSettingsMenu($menu_slug, $msg);
 		} else
 			echo '<p class="failmsg">You are not authorized to be here. </p>';
 	}

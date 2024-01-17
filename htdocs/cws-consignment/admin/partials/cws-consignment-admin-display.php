@@ -14,7 +14,7 @@
 ///////////////////////////////////////
 // SUBMITTED ITEMS display functions
 ///////////////////////////////////////
-function cwscsShowSubmittedPage($current_url, $menu_slug, $results) {
+function cwscsShowSubmittedPage($menu_slug, $results) {
 	$ctr = 0;	
 	echo '<div class="cwscs_admin">';	
 	if (is_array($results) || is_object($results)) {
@@ -30,7 +30,7 @@ function cwscsShowSubmittedPage($current_url, $menu_slug, $results) {
 				cwscsShowItemDeets($row, false, true);
 				echo '</td>
 				<td align="center">
-					<form action="'.esc_html($current_url).'?page='.esc_html($menu_slug).'" method="post">
+					<form action="/wp-admin/admin.php?page='.esc_html($menu_slug).'" method="post">
 						<input type="hidden" value="'.esc_html($row->ID).'" name="item_id">
 						<button type="submit" class="single_add_to_cart_button button">Approve / Reject</button>
 					</form>	
@@ -42,13 +42,13 @@ function cwscsShowSubmittedPage($current_url, $menu_slug, $results) {
 }
 
 // They selected an item to approve or reject
-function showApproveRejectForm($current_url, $menu_slug, $row) {
+function showApproveRejectForm($menu_slug, $row) {
 	$splits = cwscsGetAllSplits();
 	echo '<h3>'.esc_html($row->item_title).'</h3>';
 	cwscsShowItemDeets($row, true, true); // show deets and all images
 	$_POST['item_id'] = intval($_POST['item_id']);
 	echo
-	'<form action="'.esc_html($current_url).'?page='.esc_html($menu_slug).'" method="post" class="cwsreview_item">
+	'<form action="/wp-admin/admin.php?page='.esc_html($menu_slug).'" method="post" class="cwsreview_item">
 		<input type="hidden" name="item_id" value="'.esc_html($_POST['item_id']).'" />
 		<input type="hidden" name="item_image1" value="'.esc_html($row->item_image1).'" />
 		<input type="hidden" name="item_image2" value="'.esc_html($row->item_image2).'" />
@@ -152,10 +152,10 @@ function showApproveRejectForm($current_url, $menu_slug, $row) {
 ///////////////////////////////////////
 // PAYMENTS display functions
 ///////////////////////////////////////
-function cwscsShowPayoutsPage($current_url, $menu_slug, $search_sku, $search_kw, $show, $results) {
+function cwscsShowPayoutsPage($menu_slug, $search_sku, $search_kw, $show, $results) {
 	$ctr = 0;
 	// Show search and filter form
-	showFilterPayouts($current_url, $menu_slug, $search_sku, $search_kw, $show);
+	showFilterPayouts($menu_slug, $search_sku, $search_kw, $show);
 	
 	// loop through results and see if sold		
 	if (is_array($results) || is_object($results)) {
@@ -194,7 +194,7 @@ function cwscsShowPayoutsPage($current_url, $menu_slug, $search_sku, $search_kw,
 					echo 'Approved';
 				echo '</td>
 				<td align="center">
-					<form action="'.esc_html($current_url).'?page='.esc_html($menu_slug).'" method="post">
+					<form action="/wp-admin/admin.php?page='.esc_html($menu_slug).'" method="post">
 						<input type="hidden" value="'.esc_html($row->ID).'" name="item_id">
 						<input type="hidden" value="'.esc_html($row->woo['woo_price']).'" name="sell_price">
 						<button type="submit" class="single_add_to_cart_button button">Manage Payment</button>
@@ -215,10 +215,10 @@ function cwscsShowPayoutsPage($current_url, $menu_slug, $search_sku, $search_kw,
 		echo '<p>No results found. </p>';
 }
 // Display search and filter form for Payouts
-function showFilterPayouts($current_url, $menu_slug, $search_sku, $search_kw, $show="unpaid") {
+function showFilterPayouts($menu_slug, $search_sku, $search_kw, $show="unpaid") {
 	$types = array("unpaid", "paid", "all");
 	echo '
-	<form action="'.esc_html($current_url).'?page='.esc_html($menu_slug).'" method="post" class="cwscsradio_group">
+	<form action="/wp-admin/admin.php?page='.esc_html($menu_slug).'" method="post" class="cwscsradio_group">
 		<label><strong>Show:</strong> </label>';
 	foreach ($types as $i => $t) {
 		echo '
@@ -237,10 +237,10 @@ function showFilterPayouts($current_url, $menu_slug, $search_sku, $search_kw, $s
 		<input type="submit" name="view_lessons" value="Go >" class="single_add_to_cart_button button" />
 	</form>';
 }
-function cwscsShowPaymentForm($current_url, $menu_slug, $item) {
+function cwscsShowPaymentForm($menu_slug, $item) {
 	$splits = cwscsGetAllSplits();
 	echo '
-	<form action="'.esc_html($current_url).'?page='.esc_html($menu_slug).'" method="post" class="cwscsradio_group">
+	<form action="/wp-admin/admin.php?page='.esc_html($menu_slug).'" method="post" class="cwscsradio_group">
 		<h2>Add Payment</h2>
 		<input type="hidden" name="item_id" value="'.esc_html($_POST['item_id']).'" />';
 		
@@ -274,7 +274,7 @@ function cwscsShowPaymentForm($current_url, $menu_slug, $item) {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Settings page
 ////////////////////////////////////////////////////////////////////////////////////////////
-function cwscsShowSettingsMenu($current_url, $menu_slug, $msg) {
+function cwscsShowSettingsMenu($menu_slug, $msg) {
 	$tabs = array("General", "Categories", "Store Policy", "Store Splits", "Google reCAPTCHA v2", "Google reCAPTCHA v3", "Emails");
 	$icons = array("dashicons-admin-tools", "dashicons-category", "dashicons-edit", "dashicons-chart-pie", "dashicons-admin-generic", "dashicons-admin-generic", "dashicons-email-alt");
 	$content = cwscsGetSettingsContent();
@@ -305,7 +305,7 @@ function cwscsShowSettingsMenu($current_url, $menu_slug, $msg) {
 	<div class="clear"></div>
 	<div id="cwscs_msg">'.$msg.'</div>
 	<div class="button-wrap">
-	<form action="'.esc_html($current_url).'?page='.esc_html($menu_slug).'" method="post" id="cwscs_settings_form">
+	<form action="/wp-admin/admin.php?page='.esc_html($menu_slug).'" method="post" id="cwscs_settings_form">
 		<input type="hidden" name="cwscs_key" id="cwscs_key" value="categories" />
 		<input type="hidden" name="cwscs_value" id="cwscs_value" value="" />
 		<input type="hidden" name="cwscs_method" id="cwscs_method" value="savecategories" />

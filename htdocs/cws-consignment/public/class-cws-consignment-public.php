@@ -216,11 +216,7 @@ class cws_consignment_Public {
   	public function additemform_func() {
 		global $wp;
 		$ct = "";
-		if (is_ssl())
-			$http = 'https';
-		else	
-			$http = 'http';
-		$current_url  = set_url_scheme($http.'://'.$_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_URL'] );
+		$current_url  = home_url( $wp->request );
 		$subscriber = false; $editor = false; $loggedin = false; $admin = false; $author = false;
 		$msg = "";
 		$warn = "";

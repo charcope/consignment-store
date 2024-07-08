@@ -169,9 +169,9 @@ function showHideApproved(i) {
 		return;
 	}
 	if (i == 1) { // send email upon approval
-		jQuery ('#approved-email-content').removeClass("hidden");
+		jQuery ('#approved-email-content').removeClass("cwshidden");
 	} else if (i == 2) { // do not send email upon approval
-		jQuery ('#approved-email-content').addClass("hidden");
+		jQuery ('#approved-email-content').addClass("cwshidden");
 	}
 }
 // show / hide email content
@@ -180,9 +180,9 @@ function showHideRejected(i) {
 		return;
 	}
 	if (i == 1) { // send email upon rejection
-		jQuery ('#rejected-email-content').removeClass("hidden");
+		jQuery ('#rejected-email-content').removeClass("cwshidden");
 	} else if (i == 2) { // do not send email upon rejection
-		jQuery ('#rejected-email-content').addClass("hidden");
+		jQuery ('#rejected-email-content').addClass("cwshidden");
 	}
 }
 function showCatSettings(data) {

@@ -1,7 +1,7 @@
 /**
  * CSS for your public-facing functionality
  */
- .hidden {display:none !important;}
+.cwshidden {display:none !important;} /* conflicts with WC if just hidden
  
  /* messages */
  .successmsg, .failmsg, .warnmsg {

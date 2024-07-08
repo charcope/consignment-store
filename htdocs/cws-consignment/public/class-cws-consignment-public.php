@@ -409,7 +409,7 @@ class cws_consignment_Public {
 					<input type="text" id="item_retail" name="item_retail" maxlength=8 placeholder="$" required />
 				</p>
 				<p id="pshowcatprices" style="display:none;"><a href="javascript:void(0);" data-divid="catprices" class="toggledivbyid showcatprices"><span class="dashicons dashicons-visibility"></span> View average sale prices in the store to help you set a price.</a></p>
-				<div id="catprices" class="hidden"></div>
+				<div id="catprices" class="cwshidden"></div>
 				<p id="p-item_sale">
 					<label for "item_sale">Sale Price 
 						<span>How much should it sell for in the store? Note on average you will receive 1/2 half of this amount if the item sells. </span>
@@ -498,8 +498,8 @@ class cws_consignment_Public {
 				}
 				if ($policy[0] == 1) {
 					$ct .= '
-					<p><a href="javascript:void(0);" data-divid="policy" class="toggledivbyid"><span class="dashicons dashicons-visibility"></span> Click to show or hide the policy on selling items in the our consignment store.</a></p>
-					<div id="policy" class="hidden">'.esc_html($policy[1]).'</div>
+					<p><strong>Review the Store Policy on selling items in the our consignment store.</strong></p>
+					<div id="policy">'.esc_html($policy[1]).'</div>
 					<p id="p-policy_accepted">
 						<label for "policy_accepted">Please indicate your acceptance of the store policy. </label>
 						<label class="radio" for="policy_accepted">
@@ -534,7 +534,7 @@ class cws_consignment_Public {
 					}*/
 				}
 				$ct .= '
-				<p id="cwscs_errormsg" class="failmsg hidden"></p>
+				<p id="cwscs_errormsg" class="failmsg cwshidden"></p>
 				<button type="submit" name="additem" id="cc_additem" class="single_add_to_cart_button button" '.esc_html($disabled).'>Add Item</button>'; 
 				if ($disabled != "")
 					$ct .= '<p>The Add Item button is disabled until the form is complete and the "I am not a robot checkbox is clicked". </p>';

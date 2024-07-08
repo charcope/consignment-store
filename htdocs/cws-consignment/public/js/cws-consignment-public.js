@@ -5,8 +5,8 @@
 		$('.toggledivbyid').on("click", function() {
 			// first get data 
 			var divid = $(this).data("divid");
-			if ($('#' + divid).hasClass("hidden")) {
-				$('#' + divid).removeClass("hidden");
+			if ($('#' + divid).hasClass("cwshidden")) {
+				$('#' + divid).removeClass("cwshidden");
 				if (divid == "catprices") { // call ajax function to show avg prices in the store
 					$('#catprices').html('<p class="warnmsg">Fetching prices... please wait</p>');
 					var this2 = this;                      //use in callback
@@ -36,23 +36,23 @@
 					
 				}
 			} else {
-				$('#' + divid).addClass("hidden");
+				$('#' + divid).addClass("cwshidden");
 			}
 		}); // END toggledivbyid
 		
 		// Handle additem form submit - if recaptcha v3 then have to intercept
 		$('#cwscs_formadditem').submit(function() {
-			startSpinner("Please wait...") ;
+			cwsStartSpinner("Please wait...") ;
 		}); // END additem submit
 	}); // END load
 	////////////////////////////////  SPINNER  FUNCTIONS  /////////////////////////////////
-	function startSpinner(title) {
+	function cwsStartSpinner(title) {
 		console.log("Start spinner");
 		jQuery('body').append('<div class="overlay_spinner" id="myoverlay"><div><h3 id="overlaymsg">' + title + '</h3><i class="fa fa-spinner fa-spin" id="myspinner"></i></div></div>');
 		console.log ('added overlay')
 		return true;
 	}
-	function stopSpinner() {
+	function cwsStopSpinner() {
 		jQuery('#myoverlay').remove();
 	}
 	
@@ -181,26 +181,26 @@ jQuery(document).on("imageResized", function (event) {
 			fail: function(results){
 				console.log('FAIL: ', results)
 				jQuery('#cwscs_errormsg').html("Image upload failed");
-				jQuery('#cwscs_errormsg').removeClass("hidden");
+				jQuery('#cwscs_errormsg').removeClass("cwshidden");
 				jQuery('#cwscs_errormsg').addClass("failmsg");
 				jQuery('#cwscs_errormsg').removeClass("successmsg");
 			},
 			error: function(results){
 				console.log('ERROR: ', results)
 				jQuery('#cwscs_errormsg').html("Image upload failed");
-				jQuery('#cwscs_errormsg').removeClass("hidden");
+				jQuery('#cwscs_errormsg').removeClass("cwshidden");
 				jQuery('#cwscs_errormsg').addClass("failmsg");
 				jQuery('#cwscs_errormsg').removeClass("successmsg");
 			},
 			success: function(results){
 				console.log('SUCCESS: ', results)
 				jQuery('#cwscs_errormsg').html("");
-				jQuery('#cwscs_errormsg').addClass("hidden");
+				jQuery('#cwscs_errormsg').addClass("cwshidden");
 				jQuery('#cwscs_errormsg').addClass("failmsg");
 				jQuery('#cwscs_errormsg').removeClass("successmsg");
 				if (!results) {
 					jQuery('#cwscs_errormsg').html("Could not upload the image at this time.");
-					jQuery('#cwscs_errormsg').removeClass("hidden");
+					jQuery('#cwscs_errormsg').removeClass("cwshidden");
 				} else if (results.status) {
 					if (results.status == 0) { // error
 						if (results.msg && results.msg != "") {
@@ -208,7 +208,7 @@ jQuery(document).on("imageResized", function (event) {
 						} else {
 							jQuery('#cwscs_errormsg').html("There was an error.");
 						}
-						jQuery('#cwscs_errormsg').removeClass("hidden");
+						jQuery('#cwscs_errormsg').removeClass("cwshidden");
 					} else {
 						if (results.data && results.data.partimgurl) {
 							console.log('populating filename');
@@ -219,11 +219,11 @@ jQuery(document).on("imageResized", function (event) {
 							var el = thisid.replace("image", "tmp-img");
 							jQuery('#' + el).attr("src", results.data.partimgurl);
 							console.log('# + ' + el + ' set to ' + results.data.partimgurl);
-							jQuery('#' + el).removeClass("hidden");
+							jQuery('#' + el).removeClass("cwshidden");
 						} else {
 							console.log('No partimgurl');
 							jQuery('#cwscs_errormsg').html("Could not upload the image.");
-							jQuery('#cwscs_errormsg').removeClass("hidden");
+							jQuery('#cwscs_errormsg').removeClass("cwshidden");
 						}
 					}
 				} // END check on status

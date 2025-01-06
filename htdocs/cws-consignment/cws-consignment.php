@@ -16,11 +16,13 @@
  * Plugin Name:       Consignment Store for WooCommerce
  * Plugin URI:        https://charlenesweb.ca/
  * Description:       Consignment Store for WooCommerce
- * Version:           1.8
+ * Requires at least: 6.3
+ * Requires PHP:	  8.0
+ * Version:           1.8.1
  * Author:            Charlene's Web Services
- * Author URI:        https://charlenesweb.ca/plugins
- * License:           GPL-2.0+
- * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
+ * Author URI:        https://charlenesweb.ca
+ * License:           GPL v2 or later
+ * License URI:       https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  * Text Domain:       cws-consignment
  * Domain Path:       /languages
  */

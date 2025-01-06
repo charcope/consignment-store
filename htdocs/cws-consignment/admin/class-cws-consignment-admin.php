@@ -812,23 +812,6 @@ function cwscsGetStoreSplitsChecked() {
 	return $data;
 }
 
-// get the recaptcha site key and secret -- called from ajax fcn to save settings
-function cwscsGetRecaptchas($version) {
-	$myData = cwscsGetSettingByKeyReturnArray($version);
-	$data = array('version' => $version);
-	if (is_array($myData)) {
-		if (isset($myData[0]))
-			$data['site_key'] = $myData[0];
-		else
-			$data['site_key'] = "";
-		if (isset($myData[1]))
-			$data['secret'] = $myData[1];
-		else
-			$data['secret'] = "";
-	}
-	return $data;
-}
-
 // get the email settings
 function cwscsGetEmailSettings() {
 	$myData = cwscsGetSettingByKeyReturnArray("emails");

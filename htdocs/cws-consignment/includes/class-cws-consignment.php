@@ -70,7 +70,7 @@ class cws_consignment {
 		if ( defined( 'PLUGIN_NAME_VERSION' ) ) {
 			$this->version = PLUGIN_NAME_VERSION;
 		} else {
-			$this->version = '1.8';
+			$this->version = '1.8.1';
 		}
 		$this->plugin_name = 'cws-consignment';
 

@@ -40,7 +40,7 @@
 			}
 		}); // END toggledivbyid
 		
-		// Handle additem form submit - if recaptcha v3 then have to intercept
+		// Handle additem form submit
 		$('#cwscs_formadditem').submit(function() {
 			cwsStartSpinner("Please wait...") ;
 		}); // END additem submit

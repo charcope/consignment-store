@@ -1,7 +1,6 @@
 (function( $ ) {
 	'use strict';
 	$( window ).load(function() { 
-		console.log('TEST: loaded');
 		// Check item approved status and show appropriate email 	
 		$('.cwscheckapproved').click(function () {
 			var i = $(this).val();
@@ -12,7 +11,6 @@
 				$ ('#approved-email').removeClass("cwshidden");
 				$ ('#rejected-email').addClass("cwshidden");
 				$ ('.hideifrejected').removeClass("cwshidden");
-				console.log("Removed?")
 			} else if (i == 2) { // rejected
 				$ ('#approved-email').addClass("cwshidden");
 				$ ('#rejected-email').removeClass("cwshidden");
@@ -51,12 +49,6 @@
 					var btn_text = "Save Store Splits";
 					break;
 				case 4:
-					var btn_text = "Save reCAPTCHA v2";
-					break;
-				case 5:
-					var btn_text = "Save reCAPTCHA v3";
-					break;	
-				case 6:
 					var btn_text = "Save Emails";
 					break;
 				default:
@@ -113,27 +105,7 @@
 					var cwscs_method = "savesplits";
 					break;
 				case "btnsave_4":
-				case "btnsave_5":
-					if (thisid == "btnsave_4") {
-						var ext = "v2";
-						var contentid = "contenttab_4";
-						var cwscs_method = "saverecaptchav2";
-					} else {
-						var ext = "v3";
-						var contentid = "contenttab_5";
-						var cwscs_method = "saverecaptchav3";
-					}
-					// allowed to set it to blank
-					if (typeof $('#cwscs_version' + ext).val() != "undefined" && typeof $('#cwscs_site_key' + ext).val() != "undefined" && typeof $('#cwscs_secret' + ext).val() != "undefined") {
-						var cwscs_value = $('#cwscs_site_key' + ext).val() + '::' + $('#cwscs_secret' + ext).val();
-						var cwscs_key = $('#cwscs_version' + ext).val();
-					} else {
-						var cwscs_key = "";
-						var cwscs_value = "";
-					}
-					break;
-				case "btnsave_6":
-					var contentid = "contenttab_6";
+					var contentid = "contenttab_4";
 					var cwscs_method = "saveemails";
 					var cwscs_key = "emails";
 					if ($('#cwscs_from_email').val() && $('#cwscs_to_email').val()) {
@@ -143,11 +115,9 @@
 					}
 					break;	
 				default:
-					console.log('TEST: not found');
 					var cwscs_method = "";
 					break;
 			}
-			console.log('TEST: at end and ' + cwscs_key);
 			if (cwscs_key == "") {
 				$('#cwscs_msg').html('<p class="failmsg">Could not update. Please refresh and try again.</p>');
 				return;
@@ -252,41 +222,6 @@ function showSplitSettings(data) {
 	} 
 	return ct;
 }
-// Recaptcha settings
-function showRecaptchaSettings(data) {
-	var ct = "";
-	var site_key = "";
-	var secret = "";
-	var version = "";
-	var ext = "";
-	if (data) {
-		for (var key in data) {
-			switch (key) {
-				case "version":
-					if (data[key] == "recaptcha-v2") {
-						var ct = '<h3>Google reCAPTCHA v2</h3>';
-						var version = "recaptcha-v2";
-						var ext = "v2";
-					} else if (data[key] == "recaptcha-v3") {
-						var ct = '<h3>Google reCAPTCHA v3</h3>';
-						var version = "recaptcha-v3";
-						var ext = "v3";
-					} else {
-						var ct = '<h3>Google reCAPTCHA</h3>';
-					}
-					break;
-				case "site_key":
-					var site_key = data[key];
-					break;
-				case "secret":
-					var secret = data[key];
-					break;	
-			} // END switch
-		} // END loop on data
-	}
-	ct += '<input type="hidden" name="version" id="cwscs_version' + ext + '" value="' + version + '" /> <p> <label for="cwscs_site_key' + ext + '">Site Key</label><br /> <input type="text" name="cwscs_site_key' + ext + '" id="cwscs_site_key' + ext + '" value="' + site_key + '" style="width:350px"/> </p> <p> <label for="cwscs_secret' + ext + '">Secret</label><br /> <input type="text" name="cwscs_secret" id="cwscs_secret' + ext + '" value="' + secret + '" style="width:350px"/> </p>';
-	return ct;
-}
 
 // Email settings
 function showEmailSettings(data) {
@@ -309,7 +244,6 @@ function showEmailSettings(data) {
 
 ////////////////////////////////  ADMIN SPINNER  FUNCTIONS  /////////////////////////////////
 function startAdminSpinner(title) {
-	console.log("Start spinner");
 	if (!title || title == "") {
 		title = "Processing...";
 	}
@@ -318,5 +252,4 @@ function startAdminSpinner(title) {
 }
 function stopAdminSpinner() {
 	jQuery('#myoverlay').remove();
-	console.log('stopped spinner');
 }

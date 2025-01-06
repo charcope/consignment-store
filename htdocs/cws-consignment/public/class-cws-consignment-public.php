@@ -92,34 +92,7 @@ class cws_consignment_Public {
 		 */
 
 		wp_enqueue_script($this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/cws-consignment-public.js', array( 'jquery' ), $this->version, false );
-		
-		// do we need the reCaptcha scripts? Check for keys. Do v2 then v3
-		$myRecaptcha = cwscsGetSettingByKeyReturnArray("recaptcha-v2");
-		if (isset($myRecaptcha) && is_array($myRecaptcha) && isset($myRecaptcha[0]) && isset($myRecaptcha[1]) && $myRecaptcha[0] != "" && $myRecaptcha[1] != "") {
-			wp_register_script(
-				'cwscs-google-recaptchav2',
-				'https://www.google.com/recaptcha/api.js',
-				array(),
-				$this->version,
-				true
-			);
-			wp_enqueue_script("cwscs-google-recaptchav2");
-		} 
-		/* no v3 for now
-		else { // check for v3
-			$myRecaptcha = cwscsGetSettingByKeyReturnArray("recaptcha-v3");
-			if (isset($myRecaptcha) && is_array($myRecaptcha) && isset($myRecaptcha[0]) && isset($myRecaptcha[1]) && $myRecaptcha[0] != "" && $myRecaptcha[1] != "") {
-				wp_register_script(
-					'cwscs-google-recaptchav3',
-					'https://www.google.com/recaptcha/api.js',
-					array(),
-					$this->version,
-					true
-				);
-				wp_enqueue_script('cwscs-google-recaptchav3', "https://www.google.com/recaptcha/api.js?render=".$myRecaptcha[0]."&ver=".$this->version);
-			}
-		}
-		*/
+
 		// for ajax functions
 		wp_localize_script(
 			$this->plugin_name,
@@ -247,22 +220,13 @@ class cws_consignment_Public {
 				$customer = true;
 		} // END is logged in
 		
-		// get recaptcha settings - do here since need if submitted
-		$recaptcha = cwscsGetMyRecaptcha();
 		$max_upload_size = wp_max_upload_size();
 		$displayMaxSize = $max_upload_size/1000000;
 		// Was additem form submitted?
 		if (isset($_POST['additem'])) {
 			// validate the form before doing anything
 			$ok = true;
-			if (isset($recaptcha) && isset($recaptcha['version']) && $recaptcha['version'] == "v2") {
-				if (!isset($_POST['g-recaptcha-response'])) {
-					$results = array('status'=>0, 'error'=>'Please check captcha checkbox. ');
-					$ok = false;
-				} else
-					$secret = $recaptcha['secret'];
-			} else
-				$secret = ""; // not in play
+			$secret = ""; // not in play
 			// check sku if admin
 			if ($admin && (!isset($_POST['sku']) || $_POST['sku'] == "")) {
 				$results = array('status'=>0, 'error'=>'Please enter a unique sku for this product. ');
@@ -515,24 +479,8 @@ class cws_consignment_Public {
 					// save that policy was not shown
 					$ct .= '<input type="hidden" name="policy_accepted" id="policy_accepted" value=2 >';
 				}
-				// recaptcha? save a hidden field if so to help with processing
-				$isRc3 = false;
+
 				$disabled = "";
-				if (isset($recaptcha) && isset($recaptcha['version'])) {
-					if ($recaptcha['version'] == "v2") {
-						$ct .= '
-						<input type="hidden" name="rc2" id="rc2" value="'.esc_html($recaptcha['site_key']).'" >
-						<div class="clear">&nbsp;</div>
-						<div class="g-recaptcha" data-sitekey="'.esc_attr($recaptcha['site_key']).'"  data-callback="cc_enableSubmitBtn">></div>
-      <br/>';
-	  					$disabled = 'disabled="disabled" ';
-					} 
-					/* no recaptcha v3 for now
-					elseif ($recaptcha['version'] == "v3") {
-						$ct .= '<input type="hidden" name="rc3" id="rc3" value="'.$recaptcha['site_key'].'" >';
-						$isRc3 = true;
-					}*/
-				}
 				$ct .= '
 				<p id="cwscs_errormsg" class="failmsg cwshidden"></p>
 				<button type="submit" name="additem" id="cc_additem" class="single_add_to_cart_button button" '.esc_html($disabled).'>Add Item</button>'; 
@@ -743,22 +691,8 @@ function cwscsGetMyEmails() {
 	}
 	return $results;
 }
-// Get recaptcha settings, if any
-function cwscsGetMyRecaptcha() {
-	$results = array();
-	
-	$myRecaptcha = cwscsGetSettingByKeyReturnArray("recaptcha-v2");
-	if (isset($myRecaptcha) && is_array($myRecaptcha) && isset($myRecaptcha[0]) && isset($myRecaptcha[1]) && $myRecaptcha[0] != "" && $myRecaptcha[1] != "") {
-		$results = array("version"=>"v2", "site_key"=>$myRecaptcha[0], "secret"=>$myRecaptcha[1]);
-	} else { // check for v3
-		$myRecaptcha = cwscsGetSettingByKeyReturnArray("recaptcha-v3");
-		if (isset($myRecaptcha) && is_array($myRecaptcha) && isset($myRecaptcha[0]) && isset($myRecaptcha[1]) && $myRecaptcha[0] != "" && $myRecaptcha[1] != "") {
-			$results = array("version"=>"v3", "site_key"=>$myRecaptcha[0], "secret"=>$myRecaptcha[1]);
-		}
-	}
-	return $results;
-}
-// validate the additem form including recaptcha
+
+// validate the additem form
 function cwscsValidateAddItem($secret) {
 	$status = 1;
 	$error = "";
@@ -775,39 +709,7 @@ function cwscsValidateAddItem($secret) {
 		$error .= 'Enter a valid email. ';
 		$status = 0;
 	}
-	if ($status == 1 && $secret != "") { // validate recaptcha if in play
-		if(!isset($_POST['g-recaptcha-response'])){
-			$error .= 'Please check the the reCaptcha checkbox. ';
-			$status = 0;
-		} else {
-			$captcha = sanitize_text_field($_POST['g-recaptcha-response']);
-			$ip = $_SERVER['REMOTE_ADDR'];
-			// post request to server
-			$url = 'https://www.google.com/recaptcha/api/siteverify?secret=' . urlencode($secret) .  '&response=' . urlencode($captcha);
-			//$response = file_get_contents($url);
-			$response = wp_remote_get($url);
-			$status = 0; // pessimist
-			if ( is_array( $response ) && !is_wp_error( $response ) ) {
-				$headers = $response['headers']; // array of http header lines
-				$body =  wp_remote_retrieve_body( $response ) ; // array of http header lines
-				$response_code =  wp_remote_retrieve_response_code( $response );
-				if ($response_code == 200) {
-					$responseBody = json_decode($body, true);
-					if ($responseBody['success'] === true) {
-						$status = 1;
-					} elseif ($responseBody['error-codes'] && $responseBody['error-codes'][0] == "timeout-or-duplicate") {
-						$error = "Your form has expired. Please fill in the form below and click Add Item. ";					
-					} else {
-						$error = 'You did not pass the anti-spam check and we cannot accept your submission. ;'; 
-					}
-				} else
-					$error = 'We could not contact Google to validate the form. Please try again later. ';
-			} elseif (!is_wp_error( $response )) {
-				$error = 'We could not contact Google to validate the form. Please try again later. ';
-			} else
-				$error = 'We could not contact Google to validate the form. Please try again later. ';
-        }
-	}
+
 	$results = array('status'=>$status, 'error'=>$error);
 	return $results;
 }

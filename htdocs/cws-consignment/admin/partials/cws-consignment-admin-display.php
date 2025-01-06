@@ -275,14 +275,14 @@ function cwscsShowPaymentForm($menu_slug, $item) {
 // Settings page
 ////////////////////////////////////////////////////////////////////////////////////////////
 function cwscsShowSettingsMenu($menu_slug, $msg) {
-	$tabs = array("General", "Categories", "Store Policy", "Store Splits", "Google reCAPTCHA v2", "Google reCAPTCHA v3", "Emails");
+	$tabs = array("General", "Categories", "Store Policy", "Store Splits", "Emails");
 	$icons = array("dashicons-admin-tools", "dashicons-category", "dashicons-edit", "dashicons-chart-pie", "dashicons-admin-generic", "dashicons-admin-generic", "dashicons-email-alt");
 	$content = cwscsGetSettingsContent();
 	
 	echo '
     <div class="cwscs_tab">';
 	foreach ($tabs as $i => $tab) {
-		if ($i == 0 || $i == 5) { // hide General and recaptcha v3
+		if ($i == 0 || $i == 5) { // hide General
 			echo '
     	    <button class="cwscs_tablinks cwshidden" id="btntab_'.esc_html($i).'"><span class="dashicons '.esc_html($icons[$i]).'"></span>'.esc_html($tab).'</button>';
 		} else {
@@ -340,15 +340,6 @@ function cwscsGetSettingsContent() {
 	$mySplits = cwscsGetSettingByKeyReturnArray("store-splits");
 	$allSplits = cwscsGetAllSplits();
 	$content[] = cwscsShowStoreSplits($mySplits, $allSplits);
-	
-	// recaptcha v2
-	$myRecaptcha = cwscsGetSettingByKeyReturnArray("recaptcha-v2");
-	$content[] = cwscsShowRecaptcha($myRecaptcha, "recaptcha-v2");
-	
-	// recaptcha v3
-	//$myRecaptcha = cwscsGetSettingByKeyReturnArray("recaptcha-v3"); no v3 for now
-	//$content[] = cwscsShowRecaptcha($myRecaptcha, "recaptcha-v3");
-	$content[] = "";
 	
 	// Emails
 	$emails = cwscsGetSettingByKeyReturnArray("emails");
@@ -492,33 +483,6 @@ function cwscsShowStoreSplits($mySplits, $allSplits) {
 	return $ct;
 }
 
-// Display the recaptcha options
-function cwscsShowRecaptcha($myRecaptcha, $version) {
-	// any current values?
-	$site_key = "";
-	$secret = "";
-	if ($version == "recaptcha-v2")
-		$ext = 'v2';
-	else
-		$ext = 'v3';
-	if (is_array($myRecaptcha)) {
-		if (isset($myRecaptcha[0]) && $myRecaptcha[0] != "")
-			$site_key = $myRecaptcha[0];
-		if (isset($myRecaptcha[1]) && $myRecaptcha[1] != "")
-			$secret = $myRecaptcha[1];
-	}
-	$ct = '
-	<input type="hidden" name="version" id="cwscs_version'.$ext.'" value="'.$version.'" />
-	<p>
-		<label for="cwscs_site_key'.$ext.'">Site Key</label><br />
-		<input type="text" name="cwscs_site_key" id="cwscs_site_key'.$ext.'" value="'.$site_key.'" style="width:350px"/>
-	</p>
-	<p>
-		<label for="cwscs_secret'.$ext.'">Secret</label><br />
-		<input type="text" name="cwscs_secret" id="cwscs_secret'.$ext.'" value="'.$secret.'" style="width:350px"/>
-	</p>';
-	return $ct;
-}
 // Show the email settings form
 function cwscsShowEmails($emails) {
 	// any current values?
@@ -597,7 +561,6 @@ function cwscsShowDocsPage() {
 		<li>Categories</li>
 		<li>Store Policy</li>
 		<li>Store Splits</li>
-		<li>Google reCAPTCHA v2</li>
 		<li>Emails</li>
 	</ol>	
 	<h4>Categories</h4>
@@ -612,8 +575,6 @@ function cwscsShowDocsPage() {
 	<p>Displays a list of the available store splits.</p>
 	<p>Check which splits to display on the Add Item form. These are only show to Administrators. </p>
 	<p>By default, there are 2 splits available. </p>
-	<h4>Google reCAPTCHA v2</h4>
-	<p>Enter your site key and secret to enable the Google reCAPTCHA v2 "I am not a robot" checkbox on the Add Item form.</p>
 	<h4>Emails</h4>
 	<p>Enter the send from email or leave blank to use the WordPress default address.</p>
 	<p>Enter the send to email. This will be used to notify you of a new item submitted from the Add Item form from a non-Administrator. </p>

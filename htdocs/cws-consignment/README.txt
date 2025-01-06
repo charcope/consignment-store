@@ -2,10 +2,10 @@
 Contributors: charcope
 Donate link: https://charlenesweb.ca/donate/
 Tags: consignment store, consignment for WooCommerce
-Requires at least: 6.5.5
-Requires PHP: 7.4
-Tested up to: 6.6
-Stable tag: 1.7.9
+Requires at least: 6.7.1
+Requires PHP: 8.0
+Tested up to: 7.4
+Stable tag: 1.8
 License: GPLv2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -76,6 +76,9 @@ I have seen this on Microsoft Edge when there is a security plugin such as WordF
 5. Documentation
 
 == Changelog ==
+= 1.8 =
+* Remove reCaptcha 2 from plugin
+
 = 1.7.9 =
 * Go through WP 6.6 compatibility requirements. No changes required.
 
@@ -134,6 +137,9 @@ I have seen this on Microsoft Edge when there is a security plugin such as WordF
 * First release
 
 == Upgrade Notice ==
+= 1.8 =
+* Remove reCaptcha 2 from plugin. Update when convenient. 
+
 = 1.7.9 =
 * Tag update. Update version when convenient.
 
